@@ -1,10 +1,10 @@
-package com.project.SharePlate;
+package com.project.share_circle;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class SharePlateApplicationTests {
+class ShareCircleApplicationTests {
 
 	@Test
 	void contextLoads() {

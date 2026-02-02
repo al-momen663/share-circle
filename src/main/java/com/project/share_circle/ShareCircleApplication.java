@@ -1,13 +1,13 @@
-package com.project.SharePlate;
+package com.project.share_circle;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class SharePlateApplication {
+public class ShareCircleApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(SharePlateApplication.class, args);
+		SpringApplication.run(ShareCircleApplication.class, args);
 	}
 
 }
