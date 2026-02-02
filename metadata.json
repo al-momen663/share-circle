@@ -1,0 +1,9 @@
+
+{
+  "name": "Share Circle - Food & Clothes Donation Platform",
+  "description": "A community-driven platform connecting donors with volunteers to facilitate food and clothing donations to those in need. Features include real-time chat, location tracking, and role-based dashboards.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}
