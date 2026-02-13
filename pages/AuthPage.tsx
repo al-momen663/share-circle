@@ -58,3 +58,27 @@ const AuthPage: React.FC = () => {
     localStorage.setItem('share_circle_initial_view', viewType);
     navigate('/dashboard');
   };
+  return {
+	<div className={`min-h-screen flex items-center justify-center py-12 px-6 lg:px-8 bg-emerald-50 dark:bg-gray-950 transition-all duration-700 ${showOptions ? 'bg-emerald-100 dark:bg-emerald-950' : ''}`}>
+      <div className={`max-w-md w-full auth-card ${showOptions ? 'show-options' : ''}`}>
+        <div className="auth-card-inner relative w-full h-[640px]">
+		
+		{/* Front Side: Auth Form */}
+          <div className="auth-front absolute inset-0 bg-white dark:bg-gray-800 p-10 rounded-[3rem] shadow-2xl border border-gray-100 dark:border-gray-700 flex flex-col">
+            <div className="text-center">
+              <div className="w-14 h-14 bg-emerald-600 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-xl shadow-emerald-200 dark:shadow-none">
+                <span className="text-white font-bold">S</span>
+              </div>
+              <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-tight">
+                {isLogin ? 'Enter Share Circle' : 'Join the Circle'}
+              </h2>
+              <p className="mt-2 text-gray-500 dark:text-gray-400 font-medium text-xs italic">
+                {isLogin ? 'Welcome back, friend.' : 'A community that shares together.'}
+              </p>
+            </div>
+			</div>
+
+  }
+};
+
+export default AuthPage;
