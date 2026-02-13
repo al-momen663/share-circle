@@ -54,3 +54,7 @@ const AuthPage: React.FC = () => {
 			setLoading(false);
 		}
 	};
+	const handleFinalLogin = (viewType: 'grid' | 'map') => {
+    localStorage.setItem('share_circle_initial_view', viewType);
+    navigate('/dashboard');
+  };
