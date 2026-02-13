@@ -149,6 +149,25 @@ const AuthPage: React.FC = () => {
                   </button>
                 </div>
               </div>
+			  <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-4 bg-emerald-600 text-white rounded-[1.5rem] font-black text-lg hover:bg-emerald-700 transition shadow-xl shadow-emerald-200 dark:shadow-none hover:scale-[1.02] disabled:opacity-50"
+              >
+                {loading ? 'Processing...' : (isLogin ? 'Enter App' : 'Create Account')}
+              </button>
+
+              <div className="text-center mt-3">
+                <button
+                  type="button"
+                  onClick={() => setIsLogin(!isLogin)}
+                  className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 hover:underline uppercase tracking-widest"
+                >
+                  {isLogin ? "New here? Get started" : "Already registered? Login"}
+                </button>
+              </div>
+            </form>
+          </div>
   }
 };
 
