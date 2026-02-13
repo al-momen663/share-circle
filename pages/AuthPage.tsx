@@ -168,7 +168,48 @@ const AuthPage: React.FC = () => {
               </div>
             </form>
           </div>
-  }
+		  {/* Back Side: View Options */}
+          <div className="auth-back absolute inset-0 bg-white dark:bg-gray-800 p-10 rounded-[3rem] shadow-2xl border border-gray-100 dark:border-gray-700 flex flex-col justify-center items-center text-center">
+            <h2 className="text-2xl font-black text-gray-900 dark:text-white leading-tight mb-2">Login Successful!</h2>
+            <p className="text-gray-500 dark:text-gray-400 font-medium mb-8 text-xs">How would you like to explore the circle today?</p>
+            
+            <div className="grid grid-cols-1 gap-3 w-full">
+              <button
+                onClick={() => handleFinalLogin('grid')}
+                className="group w-full p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border-2 border-transparent hover:border-emerald-500 transition-all text-left flex items-center space-x-5 shadow-sm"
+              >
+                <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-xl flex items-center justify-center text-lg group-hover:scale-110 transition">🗂️</div>
+                <div>
+                  <p className="font-black text-sm text-gray-900 dark:text-white">Grid View</p>
+                  <p className="text-[10px] text-gray-400">Standard card layout</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => handleFinalLogin('map')}
+                className="group w-full p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border-2 border-transparent hover:border-emerald-500 transition-all text-left flex items-center space-x-5 shadow-sm"
+              >
+                <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-xl flex items-center justify-center text-lg group-hover:scale-110 transition">🗺️</div>
+                <div>
+                  <p className="font-black text-sm text-gray-900 dark:text-white">Map View</p>
+                  <p className="text-[10px] text-gray-400">Discover items nearby</p>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => setShowOptions(false)}
+                className="mt-6 text-gray-400 text-[10px] font-black uppercase tracking-widest hover:text-gray-600 dark:hover:text-gray-200 transition"
+              >
+                ← Back to Login
+              </button>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+  );
+  
 };
 
 export default AuthPage;
