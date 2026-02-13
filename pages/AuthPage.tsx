@@ -76,8 +76,42 @@ const AuthPage: React.FC = () => {
                 {isLogin ? 'Welcome back, friend.' : 'A community that shares together.'}
               </p>
             </div>
-			</div>
-
+			{error && (
+              <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-bold rounded-xl text-center">
+                {error}
+              </div>
+            )}
+            
+            <form className="mt-6 space-y-4 flex-grow" onSubmit={handleAuthSubmit}>
+              {!isLogin && (
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 text-center">Your Role</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setRole(UserRole.DONOR)}
+                      className={`py-2.5 rounded-xl border-2 font-black text-xs transition ${
+                        role === UserRole.DONOR 
+                        ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400' 
+                        : 'border-gray-100 dark:border-gray-700 text-gray-400'
+                      }`}
+                    >
+                      Donor
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRole(UserRole.VOLUNTEER)}
+                      className={`py-2.5 rounded-xl border-2 font-black text-xs transition ${
+                        role === UserRole.VOLUNTEER 
+                        ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400' 
+                        : 'border-gray-100 dark:border-gray-700 text-gray-400'
+                      }`}
+                    >
+                      Volunteer
+                    </button>
+                  </div>
+                </div>
+              )}
   }
 };
 
