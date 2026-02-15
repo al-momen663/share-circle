@@ -19,3 +19,11 @@ const foodIcon = new L.Icon({
     iconAnchor: [17, 35],
     popupAnchor: [0, -35],
 });
+
+const clothesIcon = new L.Icon({
+    iconUrl: 'https://cdn-icons-png.flaticon.com/512/3531/3531844.png',
+    iconSize: [35, 35],
+    iconAnchor: [17, 35],
+    popupAnchor: [0, -35],
+});
+
