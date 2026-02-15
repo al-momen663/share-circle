@@ -69,6 +69,7 @@ const CreateDonation: React.FC<CreateDonationProps> = ({ user }) => {
       alert("Geolocation is not supported by your browser.");
     }
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!location.trim()) {
@@ -118,6 +119,7 @@ const CreateDonation: React.FC<CreateDonationProps> = ({ user }) => {
             </div>
             <div className="mt-12 opacity-50 text-xs font-bold uppercase tracking-widest text-center">Share Circle</div>
         </div>
+
         <form onSubmit={handleSubmit} className="flex-grow p-12 space-y-6 overflow-y-auto max-h-[80vh]">
           <div>
             <label className="block text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Donation Title</label>
