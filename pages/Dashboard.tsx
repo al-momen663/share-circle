@@ -122,4 +122,16 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     if (matches) return [parseFloat(matches[1]), parseFloat(matches[2])];
     return [51.505, -0.09]; 
   };
+  // Determine map center based on filtered donations or default
+  const mapCenter = filteredDonations.length > 0 
+    ? parseLatLng(filteredDonations[0].location) 
+    : [51.505, -0.09] as [number, number];
+
+  const statusOptions = [
+    { label: 'All', value: 'ALL' },
+    { label: 'Available', value: DonationStatus.AVAILABLE },
+    { label: 'Picked Up', value: DonationStatus.PICKED_UP },
+    { label: 'Delivered', value: DonationStatus.DELIVERED },
+    { label: 'Cancelled', value: DonationStatus.CANCELLED },
+  ];
 };
