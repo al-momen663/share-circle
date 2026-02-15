@@ -48,27 +48,11 @@ const MapController = ({ center }: { center: [number, number] }) => {
   }, [center, map]);
   return null;
 };
-const MapController = ({ center }: { center: [number, number] }) => {
-  const map = useMap();
-  useEffect(() => {
-    map.setView(center);
-    
-    // Fix gray tiles by forcing Leaflet to recalculate container size
-    const resizeObserver = new ResizeObserver(() => {
-      map.invalidateSize();
-    });
-    
-    const container = map.getContainer();
-    resizeObserver.observe(container);
+// Define DashboardProps interface
+interface DashboardProps {
+  user: User;
+}
 
-    setTimeout(() => {
-      map.invalidateSize();
-    }, 250);
-
-    return () => resizeObserver.disconnect();
-  }, [center, map]);
-  return null;
-};
 const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [donations, setDonations] = useState<Donation[]>([]);
   const [filter, setFilter] = useState<DonationStatus | 'ALL'>('ALL');
@@ -213,4 +197,108 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             ))}
         </div>
       </div>
+
+	  {/* Content Area */}
+      <div className="min-h-[500px]">
+        {viewMode === 'grid' ? (
+          filteredDonations.length === 0 ? (
+            <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] p-20 text-center shadow-sm border border-gray-100 dark:border-gray-700 mt-4 animate-in fade-in duration-500">
+              <div className="text-6xl mb-6">🏜️</div>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">The circle is quiet</h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-sm mx-auto">No donations match your current filters. Try adjusting your search or status.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-4">
+              {filteredDonations.map((donation) => (
+                <Link 
+                  to={`/donations/${donation.id}`} 
+                  key={donation.id} 
+                  className="group bg-white dark:bg-gray-800 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 flex flex-col hover:-translate-y-2 animate-in slide-in-from-bottom-4 duration-300"
+                >
+                  <div className="relative h-56">
+                    <img 
+                      src={donation.imageUrl} 
+                      alt={donation.title}
+                      className="w-full h-full object-cover group-hover:scale-110 transition duration-700"
+                    />
+                    <div className="absolute top-4 left-4">
+                      <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg ${
+                        donation.type === DonationType.FOOD ? 'bg-white/90 text-orange-600 backdrop-blur-md' : 'bg-white/90 text-blue-600 backdrop-blur-md'
+                      }`}>
+                        {donation.type}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-7 flex-grow">
+                    <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2 leading-tight truncate">{donation.title}</h3>
+                    <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-6">
+                      <span className="mr-2 opacity-70">📍</span>
+                      <span className="truncate">{donation.location}</span>
+                    </div>
+                    <div className="pt-6 border-t border-gray-50 dark:border-gray-700 flex justify-between items-center">
+                      <div className="flex items-center space-x-3">
+                        <img src={`https://ui-avatars.com/api/?name=${donation.donorName}&background=random`} className="w-8 h-8 rounded-lg" alt="Donor avatar" />
+                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{donation.donorName}</span>
+                      </div>
+                      <span className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
+                        donation.status === DonationStatus.AVAILABLE ? 'bg-emerald-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-500'
+                      }`}>
+                        {donation.status.replace('_', ' ')}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )
+        ) : (
+          <div className="h-[600px] w-full rounded-[2.5rem] overflow-hidden shadow-xl border-4 border-white dark:border-gray-800 bg-gray-200 dark:bg-gray-950 mt-4 relative animate-in fade-in duration-500">
+             <MapContainer 
+                center={mapCenter} 
+                zoom={13} 
+                scrollWheelZoom={true} 
+                className="z-0 w-full h-full"
+             >
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' />
+                <MapController center={mapCenter} />
+                {filteredDonations.map((d) => {
+                  const pos = parseLatLng(d.location);
+                  // Only show markers that parsed correctly (not the default if the address was just text)
+                  return (
+                    <Marker 
+                        key={d.id} 
+                        position={pos}
+                        icon={d.type === DonationType.FOOD ? foodIcon : clothesIcon}
+                    >
+                        <Popup>
+                            <div className="p-1 min-w-[200px]">
+                                <img src={d.imageUrl} className="w-full h-24 object-cover rounded-xl mb-3 shadow-sm" alt="Donation" />
+                                <h4 className="font-black text-gray-900 text-lg mb-1 leading-tight">{d.title}</h4>
+                                <p className="text-xs text-gray-500 mb-3 truncate">📍 {d.location}</p>
+                                <div className="flex justify-between items-center mb-3">
+                                     <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${
+                                        d.status === DonationStatus.AVAILABLE ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
+                                    }`}>
+                                        {d.status.replace('_', ' ')}
+                                    </span>
+                                </div>
+                                <Link 
+                                    to={`/donations/${d.id}`}
+                                    className="block w-full text-center bg-emerald-600 text-white py-2 rounded-lg font-bold text-xs hover:bg-emerald-700 transition shadow-lg shadow-emerald-100"
+                                >
+                                    View Details
+                                </Link>
+                            </div>
+                        </Popup>
+                    </Marker>
+                  )
+                })}
+             </MapContainer>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
+
+export default Dashboard;
