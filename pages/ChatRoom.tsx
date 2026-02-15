@@ -14,3 +14,49 @@ import { db } from '../lib/firebase';
 import { User, Message, Donation } from '../types';
 // Import Gemini API
 import { GoogleGenAI } from "@google/genai";
+
+interface ChatRoomProps {
+  user: User;
+}
+const ChatRoom: React.FC<ChatRoomProps> = ({ user }) => {
+  const { id } = useParams<{ id: string }>();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputText, setInputText] = useState('');
+  const [donation, setDonation] = useState<Donation | null>(null);
+  const [suggestion, setSuggestion] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!id) return;
+
+    // Fetch donation metadata
+    getDoc(doc(db, 'donations', id)).then(snap => {
+      if (snap.exists()) setDonation({ id: snap.id, ...snap.data() } as Donation);
+    });
+
+    // Real-time messages listener
+    const q = query(
+      collection(db, 'messages'),
+      where('donationId', '==', id),
+      orderBy('timestamp', 'asc')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const msgs = snapshot.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      })) as Message[];
+      setMessages(msgs);
+    });
+
+    return () => unsubscribe();
+  }, [id]);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+};
+export default ChatRoom;
