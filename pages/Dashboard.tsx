@@ -178,4 +178,21 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                     onChange={(e) => setSearch(e.target.value)}
                 />
             </div>
+
+			  {/* View Mode Switcher */}
+            <div className="flex bg-white dark:bg-gray-800 p-1.5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+                <button 
+                    onClick={() => setViewMode('grid')}
+                    className={`px-6 py-2 rounded-xl text-sm font-bold transition flex items-center space-x-2 ${viewMode === 'grid' ? 'bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300' : 'text-gray-400 hover:text-gray-600'}`}
+                >
+                    <span>🗂️</span> <span>Grid</span>
+                </button>
+                <button 
+                    onClick={() => setViewMode('map')}
+                    className={`px-6 py-2 rounded-xl text-sm font-bold transition flex items-center space-x-2 ${viewMode === 'map' ? 'bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300' : 'text-gray-400 hover:text-gray-600'}`}
+                >
+                    <span>🗺️</span> <span>Map</span>
+                </button>
+            </div>
+        </div>
 };
