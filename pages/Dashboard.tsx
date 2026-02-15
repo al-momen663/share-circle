@@ -69,3 +69,57 @@ const MapController = ({ center }: { center: [number, number] }) => {
   }, [center, map]);
   return null;
 };
+const Dashboard: React.FC<DashboardProps> = ({ user }) => {
+  const [donations, setDonations] = useState<Donation[]>([]);
+  const [filter, setFilter] = useState<DonationStatus | 'ALL'>('ALL');
+  const [search, setSearch] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'map'>(() => {
+    return (localStorage.getItem('share_circle_initial_view') as 'grid' | 'map') || 'grid';
+  });
+
+  useEffect(() => {
+    let q;
+    if (user.role === UserRole.DONOR) {
+      q = query(
+        collection(db, 'donations'), 
+        where('donorId', '==', user.id),
+        orderBy('createdAt', 'desc')
+      );
+    } else {
+      q = query(
+        collection(db, 'donations'),
+        orderBy('createdAt', 'desc')
+      );
+    }
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Donation[];
+      
+      if (user.role === UserRole.VOLUNTEER) {
+        setDonations(docs.filter(d => d.status === DonationStatus.AVAILABLE || d.volunteerId === user.id));
+      } else {
+        setDonations(docs);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [user.id, user.role]);
+
+  const filteredDonations = donations.filter(d => {
+    const statusMatch = filter === 'ALL' || d.status === filter;
+    const searchMatch = d.title.toLowerCase().includes(search.toLowerCase()) || 
+                       d.location.toLowerCase().includes(search.toLowerCase());
+    return statusMatch && searchMatch;
+  });
+
+  const parseLatLng = (loc: string): [number, number] => {
+    if (!loc) return [51.505, -0.09];
+    // Regex to handle "lat, lng", "lat lng", or simple floats
+    const matches = loc.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/) || loc.match(/(-?\d+\.\d+)\s+(-?\d+\.\d+)/);
+    if (matches) return [parseFloat(matches[1]), parseFloat(matches[2])];
+    return [51.505, -0.09]; 
+  };
+};
