@@ -58,5 +58,30 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ user }) => {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+    const fetchAiSuggestion = async () => {
+    if (!donation) return;
+    setAiLoading(true);
+    try {
+      
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const prompt = `You are a helpful community assistant for a donation app. 
+        Donation item: ${donation.title}
+        Task: Suggest a one-sentence polite and safe coordination message (e.g., asking for pickup time or confirming location).
+        Context: The user is a ${user.role.toLowerCase()}.`;
+      
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+      });
+      
+      
+      const text = response.text;
+      if (text) setSuggestion(text.trim());
+    } catch (error) {
+      console.error("AI Suggestion error", error);
+    } finally {
+      setAiLoading(false);
+    }
+  };
 };
 export default ChatRoom;
