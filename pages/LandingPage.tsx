@@ -45,3 +45,46 @@ const LandingPage: React.FC<LandingPageProps> = ({ user }) => {
           </div>
         </div>
       </section>
+      {/* Feature Section */}
+      <section className="bg-gray-50 dark:bg-gray-900/50 py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">How Share Circle Works</h2>
+          <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-16">Simple steps to make the world a better place.</p>
+          
+          <div className="grid md:grid-cols-3 gap-12">
+            {[
+              {
+                title: 'Donors List Items',
+                desc: 'Capture photos and add details of food or clothes you wish to donate.',
+                icon: '📸',
+                color: 'bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400'
+              },
+              {
+                title: 'Volunteers Pick Up',
+                desc: 'Local volunteers see available donations and claim them for delivery.',
+                icon: '🚚',
+                color: 'bg-teal-50 dark:bg-teal-950 text-teal-600 dark:text-teal-400'
+              },
+              {
+                title: 'Safe Delivery',
+                desc: 'Live chat ensures coordination until the donation reaches someone in need.',
+                icon: '🎁',
+                color: 'bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400'
+              }
+            ].map((feature, i) => (
+              <div key={i} className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm hover:shadow-md transition">
+                <div className={`w-16 h-16 ${feature.color} rounded-2xl flex items-center justify-center text-3xl mb-6 mx-auto`}>
+                  {feature.icon}
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">{feature.title}</h3>
+                <p className="text-gray-600 dark:text-gray-400">{feature.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+};
+
+export default LandingPage;
