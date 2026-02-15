@@ -27,3 +27,45 @@ const clothesIcon = new L.Icon({
     popupAnchor: [0, -35],
 });
 
+const MapController = ({ center }: { center: [number, number] }) => {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center);
+    
+    // Fix gray tiles by forcing Leaflet to recalculate container size
+    const resizeObserver = new ResizeObserver(() => {
+      map.invalidateSize();
+    });
+    
+    const container = map.getContainer();
+    resizeObserver.observe(container);
+
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 250);
+
+    return () => resizeObserver.disconnect();
+  }, [center, map]);
+  return null;
+};
+const MapController = ({ center }: { center: [number, number] }) => {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center);
+    
+    // Fix gray tiles by forcing Leaflet to recalculate container size
+    const resizeObserver = new ResizeObserver(() => {
+      map.invalidateSize();
+    });
+    
+    const container = map.getContainer();
+    resizeObserver.observe(container);
+
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 250);
+
+    return () => resizeObserver.disconnect();
+  }, [center, map]);
+  return null;
+};
