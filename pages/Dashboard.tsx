@@ -195,4 +195,22 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                 </button>
             </div>
         </div>
+		 {/* Status Filters */}
+        <div className="flex flex-wrap gap-2 items-center">
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mr-2">Filter Status:</span>
+            {statusOptions.map((opt) => (
+                <button
+                    key={opt.value}
+                    onClick={() => setFilter(opt.value as any)}
+                    className={`px-4 py-2 rounded-full text-xs font-bold transition border ${
+                        filter === opt.value 
+                        ? 'bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-100 dark:shadow-none' 
+                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-emerald-500'
+                    }`}
+                >
+                    {opt.label}
+                </button>
+            ))}
+        </div>
+      </div>
 };
