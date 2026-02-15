@@ -83,5 +83,24 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ user }) => {
       setAiLoading(false);
     }
   };
+  const handleSendMessage = async (e: React.FormEvent | string) => {
+    if (typeof e !== 'string') e.preventDefault();
+    const textToSend = typeof e === 'string' ? e : inputText;
+    
+    if (!textToSend.trim() || !id) return;
+
+    try {
+      await addDoc(collection(db, 'messages'), {
+        donationId: id,
+        senderId: user.id,
+        text: textToSend,
+        timestamp: Date.now()
+      });
+      setInputText('');
+      setSuggestion(null);
+    } catch (err) {
+      console.error("Message send error", err);
+    }
+  };
 };
 export default ChatRoom;
