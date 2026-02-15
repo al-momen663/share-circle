@@ -164,4 +164,18 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             )}
         </div>
       </div>
+	  {/* Controls */}
+      <div className="space-y-6 mb-8">
+        <div className="flex flex-col lg:flex-row gap-4 justify-between items-center">
+            {/* Search */}
+            <div className="w-full lg:w-96 relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                <input 
+                    type="text" 
+                    placeholder="Search donation or location..."
+                    className="w-full pl-12 pr-4 py-3 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 focus:ring-2 focus:ring-emerald-500 outline-none transition dark:text-white shadow-sm"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
+            </div>
 };
