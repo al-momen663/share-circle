@@ -146,4 +146,22 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
               : `Ready to connect and serve, ${user.name.split(' ')[0]}?`}
           </p>
         </div>
+		 <div className="flex space-x-4 lg:col-span-2 lg:justify-end">
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 flex-1 lg:flex-none lg:w-32 shadow-sm text-center">
+                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">In Circle</p>
+                <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{donations.length}</p>
+            </div>
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 flex-1 lg:flex-none lg:w-32 shadow-sm text-center">
+                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Available</p>
+                <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                    {donations.filter(d => d.status === DonationStatus.AVAILABLE).length}
+                </p>
+            </div>
+            {user.role === UserRole.DONOR && (
+                <Link to="/donate" className="flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl px-6 py-4 font-bold transition shadow-xl shadow-emerald-200 dark:shadow-none">
+                   + New Donation
+                </Link>
+            )}
+        </div>
+      </div>
 };
