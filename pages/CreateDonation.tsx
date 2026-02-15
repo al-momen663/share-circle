@@ -118,3 +118,63 @@ const CreateDonation: React.FC<CreateDonationProps> = ({ user }) => {
             </div>
             <div className="mt-12 opacity-50 text-xs font-bold uppercase tracking-widest text-center">Share Circle</div>
         </div>
+        <form onSubmit={handleSubmit} className="flex-grow p-12 space-y-6 overflow-y-auto max-h-[80vh]">
+          <div>
+            <label className="block text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Donation Title</label>
+            <input 
+              type="text" required value={title} onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g., Fresh Organic Apples"
+              className="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border-none focus:ring-2 focus:ring-emerald-500 outline-none transition dark:text-white"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <button type="button" onClick={() => setType(DonationType.FOOD)} className={py-4 rounded-2xl border-2 font-black transition ${type === DonationType.FOOD ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400' : 'border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-400'}}>🍎 Food</button>
+            <button type="button" onClick={() => setType(DonationType.CLOTHES)} className={py-4 rounded-2xl border-2 font-black transition ${type === DonationType.CLOTHES ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400' : 'border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-400'}}>👕 Clothes</button>
+          </div>
+
+          <div>
+            <label className="block text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Pickup Location / Address</label>
+            <div className="relative">
+              <input 
+                type="text" required value={location} onChange={(e) => setLocation(e.target.value)}
+                placeholder="Enter street address or lat, lng..."
+                className="w-full pl-6 pr-28 py-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border-none focus:ring-2 focus:ring-emerald-500 outline-none transition dark:text-white"
+              />
+              <button 
+                type="button" 
+                onClick={handleGetLocation}
+                className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-200 transition"
+              >
+                📍 GPS
+              </button>
+            </div>
+            <p className="mt-2 text-[10px] text-gray-400 dark:text-gray-500 font-medium italic">Tip: GPS coordinates work best for the map!</p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Item Photo</label>
+            <div onClick={() => document.getElementById('photo-input')?.click()} className="relative border-2 border-dashed border-gray-100 dark:border-gray-700 rounded-3xl h-48 flex items-center justify-center bg-gray-50 dark:bg-gray-900 overflow-hidden cursor-pointer hover:border-emerald-400 transition">
+              {image ? <img src={image} className="absolute inset-0 w-full h-full object-cover" /> : <div className="text-center"><span className="text-3xl block mb-2">📸</span><span className="text-gray-400 text-xs font-bold uppercase tracking-widest">Tap to upload</span></div>}
+              <input id="photo-input" type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+            </div>
+          </div>
+
+          <div>
+            <div className="flex justify-between items-center mb-3">
+              <label className="block text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Description</label>
+              <button type="button" onClick={handleAiAssist} disabled={aiLoading} className="text-[10px] font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-full hover:bg-emerald-200 transition">{aiLoading ? '✨' : '✨ AI Assist'}</button>
+            </div>
+            <textarea rows={3} required value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Tell us more about the donation..." className="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border-none focus:ring-2 focus:ring-emerald-500 outline-none transition dark:text-white resize-none" />
+          </div>
+
+          <button type="submit" disabled={loading} className="w-full py-5 bg-emerald-600 text-white rounded-[1.5rem] font-black text-xl hover:bg-emerald-700 shadow-xl disabled:opacity-50 transition active:scale-[0.98]">
+            {loading ? 'Publishing...' : 'Publish Donation'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default CreateDonation;
