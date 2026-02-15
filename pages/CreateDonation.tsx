@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, addDoc } from 'firebase/firestore';
@@ -62,7 +63,7 @@ const CreateDonation: React.FC<CreateDonationProps> = ({ user }) => {
   const handleGetLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => setLocation(${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}),
+        (pos) => setLocation(`${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`),
         () => alert("Location access denied. Please enter manually.")
       );
     } else {
@@ -131,8 +132,8 @@ const CreateDonation: React.FC<CreateDonationProps> = ({ user }) => {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <button type="button" onClick={() => setType(DonationType.FOOD)} className={py-4 rounded-2xl border-2 font-black transition ${type === DonationType.FOOD ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400' : 'border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-400'}}>🍎 Food</button>
-            <button type="button" onClick={() => setType(DonationType.CLOTHES)} className={py-4 rounded-2xl border-2 font-black transition ${type === DonationType.CLOTHES ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400' : 'border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-400'}}>👕 Clothes</button>
+            <button type="button" onClick={() => setType(DonationType.FOOD)} className={`py-4 rounded-2xl border-2 font-black transition ${type === DonationType.FOOD ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400' : 'border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-400'}`}>🍎 Food</button>
+            <button type="button" onClick={() => setType(DonationType.CLOTHES)} className={`py-4 rounded-2xl border-2 font-black transition ${type === DonationType.CLOTHES ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400' : 'border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-400'}`}>👕 Clothes</button>
           </div>
 
           <div>
