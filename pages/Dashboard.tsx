@@ -12,3 +12,10 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
+
+const foodIcon = new L.Icon({
+    iconUrl: 'https://cdn-icons-png.flaticon.com/512/3194/3194591.png',
+    iconSize: [35, 35],
+    iconAnchor: [17, 35],
+    popupAnchor: [0, -35],
+});
