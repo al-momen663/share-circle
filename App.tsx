@@ -69,5 +69,38 @@ const App: React.FC = () => {
       </div>
     );
   }
+
+  return (
+    <Router>
+      <div className="flex flex-col min-h-screen transition-colors duration-300">
+        <Navbar user={currentUser} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} />
+        <main className="flex-grow">
+          <Routes>
+            <Route path="/" element={<LandingPage user={currentUser} />} />
+            <Route 
+              path="/auth" 
+              element={!currentUser ? <AuthPage /> : <Navigate to="/dashboard" />} 
+            />
+            <Route 
+              path="/dashboard" 
+              element={currentUser ? <Dashboard user={currentUser} /> : <Navigate to="/auth" />} 
+            />
+            <Route 
+              path="/donate" 
+              element={currentUser?.role === 'DONOR' ? <CreateDonation user={currentUser} /> : <Navigate to="/dashboard" />} 
+            />
+            <Route 
+              path="/donations/:id" 
+              element={currentUser ? <DonationDetails user={currentUser} /> : <Navigate to="/auth" />} 
+            />
+            <Route 
+              path="/chat/:id" 
+              element={currentUser ? <ChatRoom user={currentUser} /> : <Navigate to="/auth" />} 
+            />
+          </Routes>
+        </main>
+      </div>
+    </Router>
+  );
 };
-return default App;
+export default App;
