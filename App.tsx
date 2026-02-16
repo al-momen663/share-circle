@@ -8,6 +8,7 @@ import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
 import Dashboard from './pages/Dashboard';
 import CreateDonation from './pages/CreateDonation';
+import DonationDetails from './pages/DonationDetails';
 import ChatRoom from './pages/ChatRoom';
 import { User } from './types';
 
