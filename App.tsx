@@ -40,5 +40,34 @@ const App: React.FC = () => {
 
     return () => unsubscribe();
   }, []);
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('kindshare_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('kindshare_theme', 'light');
+    }
+  }, [isDark]);
+
+  const toggleTheme = () => setIsDark(!isDark);
+
+  const handleLogout = async () => {
+    try {
+      // Fix: Use modular signOut with the auth instance
+      await signOut(auth);
+      setCurrentUser(null);
+    } catch (error) {
+      console.error("Logout error", error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-emerald-50 dark:bg-gray-950">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-600"></div>
+      </div>
+    );
+  }
 };
 return default App;
