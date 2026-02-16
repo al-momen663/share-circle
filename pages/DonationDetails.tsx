@@ -20,5 +20,22 @@ const DonationDetails: React.FC<DonationDetailsProps> = ({ user }) => {
     });
     return () => unsubscribe();
   }, [id]);
+  const updateStatus = async (newStatus: DonationStatus, volunteerId?: string) => {
+    if (!donation || !id) return;
+    try {
+      const data: any = { status: newStatus };
+      if (volunteerId) data.volunteerId = volunteerId;
+      await updateDoc(doc(db, 'donations', id), data);
+    } catch (err) {
+      console.error("Update status error", err);
+      alert("Failed to update status.");
+    }
+  };
+
+  if (!donation) return <div className="p-10 text-center dark:text-white">Loading donation details...</div>;
+
+  const isDonor = donation.donorId === user.id;
+  const isVolunteer = user.role === UserRole.VOLUNTEER;
+  const isClaimedByMe = donation.volunteerId === user.id;
 };
-export
+export default DonationDetails;
