@@ -31,3 +31,31 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
       setImagePreview(URL.createObjectURL(file));
     }
   };
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+
+  try {
+    let finalImageUrl = formData.imageUrl;
+
+    if (imageFile) {
+      const storageRef = ref(storage, `market_items/${Date.now()}_${imageFile.name}`);
+      const uploadTask = uploadBytesResumable(storageRef, imageFile);
+
+      finalImageUrl = await new Promise((resolve, reject) => {
+        uploadTask.on(
+          'state_changed',
+          (snapshot) => {
+            const progress =
+              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            setUploadProgress(progress);
+          },
+          (error) => reject(error),
+          () => {
+            getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+              resolve(downloadURL);
+            });
+          }
+        );
+      });
+    }
