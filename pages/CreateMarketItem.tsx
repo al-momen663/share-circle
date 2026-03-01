@@ -76,16 +76,7 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
         `https://picsum.photos/seed/${formData.title}/800/600`,
       createdAt: Date.now(),
     };
-        await addDoc(collection(db, 'market_items'), itemData);
-    navigate('/marketplace');
-  } catch (error) {
-    console.error("Error creating market item:", error);
-    alert("Failed to create item. Please try again.");
-  } finally {
-    setLoading(false);
-  }
-};
-await addDoc(collection(db, 'market_items'), itemData);
+    await addDoc(collection(db, 'market_items'), itemData);
     navigate('/marketplace');
   } catch (error) {
     console.error("Error creating market item:", error);
