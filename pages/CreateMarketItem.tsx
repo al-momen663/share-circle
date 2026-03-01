@@ -85,3 +85,11 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
     setLoading(false);
   }
 };
+return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-3xl mx-auto">
+        <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800">
+          <div className="bg-emerald-600 p-8 text-white">
+            <h1 className="text-3xl font-extrabold mb-2">Sell an Item</h1>
+            <p className="text-emerald-100 opacity-90">List your fresh food, groceries, or furniture for the community.</p>
+          </div>
