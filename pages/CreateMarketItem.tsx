@@ -207,3 +207,41 @@ return (
     className="hidden"
     accept="image/*"
   />
+  <div className="text-center">
+    <span className="text-xs text-gray-400">OR</span>
+  </div>
+
+  <input
+    type="url"
+    placeholder="Paste image URL instead"
+    className="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-gray-700 focus:ring-0 transition-all text-gray-900 dark:text-white"
+    value={formData.imageUrl}
+    onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+  />
+</div>
+<div className="pt-6 flex gap-4">
+              <button
+                type="button"
+                onClick={() => navigate('/marketplace')}
+                className="flex-1 px-8 py-4 rounded-2xl font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-[2] bg-emerald-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-emerald-700 transition shadow-lg shadow-emerald-200 dark:shadow-none disabled:opacity-50"
+              >
+                {loading ? `Listing... ${Math.round(uploadProgress)}%` : 'List Item for Sale'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CreateMarketItem;
+
+
