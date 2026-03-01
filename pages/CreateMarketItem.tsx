@@ -170,3 +170,40 @@ return (
                 />
               </div>
             </div>
+            <div className="space-y-4">
+  <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider block">
+    Item Photo
+  </label>
+
+  <div
+    onClick={() => fileInputRef.current?.click()}
+    className="w-full h-48 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 transition-colors bg-gray-50 dark:bg-gray-800 overflow-hidden relative"
+  >
+    {imagePreview ? (
+      <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+    ) : (
+      <>
+        <span className="text-4xl mb-2">📸</span>
+        <span className="text-sm text-gray-500">Click to upload photo</span>
+      </>
+    )}
+
+    {loading && uploadProgress > 0 && (
+      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+        <div className="w-3/4 h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-emerald-500 transition-all"
+            style={{ width: `${uploadProgress}%` }}
+          ></div>
+        </div>
+      </div>
+    )}
+  </div>
+
+  <input
+    type="file"
+    ref={fileInputRef}
+    onChange={handleFileChange}
+    className="hidden"
+    accept="image/*"
+  />
