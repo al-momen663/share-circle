@@ -15,3 +15,12 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    price: '',
+    originalPrice: '',
+    category: MarketCategory.FOOD,
+    location: '',
+    imageUrl: ''
+  });
