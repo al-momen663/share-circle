@@ -86,10 +86,87 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
   }
 };
 return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-12 px-4 sm:px-6 lg:px-8">
+  <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
         <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800">
           <div className="bg-emerald-600 p-8 text-white">
             <h1 className="text-3xl font-extrabold mb-2">Sell an Item</h1>
             <p className="text-emerald-100 opacity-90">List your fresh food, groceries, or furniture for the community.</p>
           </div>
+                    <form onSubmit={handleSubmit} className="p-8 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Item Title</label>
+                <input
+                  required
+                  type="text"
+                  placeholder="e.g. Fresh Organic Tomatoes"
+                  className="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-gray-700 focus:ring-0 transition-all text-gray-900 dark:text-white"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Price ($)</label>
+                  <input
+                    required
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    className="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-gray-700 focus:ring-0 transition-all text-gray-900 dark:text-white"
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Original ($)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="Optional"
+                    className="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-gray-700 focus:ring-0 transition-all text-gray-900 dark:text-white"
+                    value={formData.originalPrice}
+                    onChange={(e) => setFormData({ ...formData, originalPrice: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Description</label>
+              <textarea
+                required
+                rows={4}
+                placeholder="Tell buyers about the quality, quantity, and condition..."
+                className="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-gray-700 focus:ring-0 transition-all text-gray-900 dark:text-white resize-none"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Category</label>
+                <select
+                  className="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-gray-700 focus:ring-0 transition-all text-gray-900 dark:text-white"
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value as MarketCategory })}
+                >
+                  <option value={MarketCategory.FOOD}>Food</option>
+                  <option value={MarketCategory.GROCERY}>Grocery</option>
+                  <option value={MarketCategory.FURNITURE}>Furniture</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Location</label>
+                <input
+                  required
+                  type="text"
+                  placeholder="e.g. Downtown, NY"
+                  className="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-gray-700 focus:ring-0 transition-all text-gray-900 dark:text-white"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                />
+              </div>
+            </div>
