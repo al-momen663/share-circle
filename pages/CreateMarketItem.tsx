@@ -59,3 +59,20 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
         );
       });
     }
+    const itemData = {
+      sellerId: user.id,
+      sellerName: user.name,
+      title: formData.title,
+      description: formData.description,
+      price: parseFloat(formData.price),
+      originalPrice: formData.originalPrice
+        ? parseFloat(formData.originalPrice)
+        : null,
+      category: formData.category,
+      status: MarketItemStatus.AVAILABLE,
+      location: formData.location,
+      imageUrl:
+        finalImageUrl ||
+        `https://picsum.photos/seed/${formData.title}/800/600`,
+      createdAt: Date.now(),
+    };
