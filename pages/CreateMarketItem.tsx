@@ -9,3 +9,9 @@ interface CreateMarketItemProps {
 }
 
 const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
+  const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [loading, setLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
