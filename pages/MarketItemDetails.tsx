@@ -43,3 +43,20 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
         buyerName: user.name,
         soldAt: Date.now()
       });
+      
+      await addDoc(collection(db, 'messages'), {
+        marketItemId: id,
+        senderId: user.id,
+        text: `Hi ${item.sellerName}, I'm interested in buying your ${item.title}. I've marked it as sold!`,
+        timestamp: Date.now()
+      });
+
+      alert("Success! You've purchased this item. You can now chat with the seller.");
+      navigate(`/chat/${id}?type=market`);
+    } catch (error) {
+      console.error("Error buying item:", error);
+      alert("Failed to purchase item. Please try again.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
