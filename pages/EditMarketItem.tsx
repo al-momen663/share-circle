@@ -170,3 +170,15 @@ const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
                 </div>
               </div>
             </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Description</label>
+              <textarea
+                required
+                rows={4}
+                placeholder="Tell buyers about the quality, quantity, and condition..."
+                className="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-gray-700 focus:ring-0 transition-all text-gray-900 dark:text-white resize-none"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
+            </div>
