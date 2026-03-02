@@ -144,3 +144,29 @@ const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 />
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Price ($)</label>
+                  <input
+                    required
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    className="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-gray-700 focus:ring-0 transition-all text-gray-900 dark:text-white"
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Original ($)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="Optional"
+                    className="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-gray-700 focus:ring-0 transition-all text-gray-900 dark:text-white"
+                    value={formData.originalPrice}
+                    onChange={(e) => setFormData({ ...formData, originalPrice: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
