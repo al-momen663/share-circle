@@ -208,3 +208,15 @@ const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
                 </select>
               </div>
             </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Location</label>
+              <input
+                required
+                type="text"
+                placeholder="e.g. Downtown, NY"
+                className="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-gray-700 focus:ring-0 transition-all text-gray-900 dark:text-white"
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+              />
+            </div>
