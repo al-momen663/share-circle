@@ -98,3 +98,13 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
                     )}
                   </div>
                 </div>
+                <div className="flex items-center space-x-4 mb-8 p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl">
+                  <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 font-bold text-xl">
+                    {item.sellerName.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold tracking-widest">Seller</p>
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">{item.sellerName}</p>
+                  </div>
+                </div>
+
