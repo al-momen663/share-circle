@@ -96,3 +96,23 @@ const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
           );
         });
       }
+      const docRef = doc(db, 'market_items', id);
+      await updateDoc(docRef, {
+        title: formData.title,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : null,
+        category: formData.category,
+        status: formData.status,
+        location: formData.location,
+        imageUrl: finalImageUrl,
+        updatedAt: Date.now()
+      });
+      navigate(`/market/item/${id}`);
+    } catch (error) {
+      console.error("Error updating market item:", error);
+      alert("Failed to update item. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
