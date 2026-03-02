@@ -1,11 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { User, UserRole, Donation, DonationStatus, DonationType } from '../types';
+import { User, UserRole, Donation, DonationStatus, DonationType, MarketItem, MarketItemStatus } from '../types';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 
+// Fix Leaflet icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -27,6 +29,7 @@ const clothesIcon = new L.Icon({
     popupAnchor: [0, -35],
 });
 
+// Helper component to handle map re-centering and fixing gray tiles
 const MapController = ({ center }: { center: [number, number] }) => {
   const map = useMap();
   useEffect(() => {
@@ -48,13 +51,15 @@ const MapController = ({ center }: { center: [number, number] }) => {
   }, [center, map]);
   return null;
 };
-// Define DashboardProps interface
+
 interface DashboardProps {
   user: User;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [donations, setDonations] = useState<Donation[]>([]);
+  const [marketItems, setMarketItems] = useState<MarketItem[]>([]);
+  const [activeTab, setActiveTab] = useState<'donations' | 'market'>('donations');
   const [filter, setFilter] = useState<DonationStatus | 'ALL'>('ALL');
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'map'>(() => {
@@ -66,13 +71,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     if (user.role === UserRole.DONOR) {
       q = query(
         collection(db, 'donations'), 
-        where('donorId', '==', user.id),
-        orderBy('createdAt', 'desc')
+        where('donorId', '==', user.id)
       );
     } else {
       q = query(
-        collection(db, 'donations'),
-        orderBy('createdAt', 'desc')
+        collection(db, 'donations')
       );
     }
 
@@ -82,11 +85,41 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
         ...doc.data()
       })) as Donation[];
       
+      // Sort client-side
+      const sortedDocs = docs.sort((a, b) => b.createdAt - a.createdAt);
+
       if (user.role === UserRole.VOLUNTEER) {
-        setDonations(docs.filter(d => d.status === DonationStatus.AVAILABLE || d.volunteerId === user.id));
+        setDonations(sortedDocs.filter(d => d.status === DonationStatus.AVAILABLE || d.volunteerId === user.id));
       } else {
-        setDonations(docs);
+        setDonations(sortedDocs);
       }
+    });
+
+    return () => unsubscribe();
+  }, [user.id, user.role]);
+
+  useEffect(() => {
+    let q;
+    if (user.role === UserRole.DONOR) {
+      q = query(
+        collection(db, 'market_items'),
+        where('sellerId', '==', user.id)
+      );
+    } else {
+      q = query(
+        collection(db, 'market_items')
+      );
+    }
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as MarketItem[];
+      
+      // Sort client-side
+      const sortedDocs = docs.sort((a, b) => b.createdAt - a.createdAt);
+      setMarketItems(sortedDocs);
     });
 
     return () => unsubscribe();
@@ -106,6 +139,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     if (matches) return [parseFloat(matches[1]), parseFloat(matches[2])];
     return [51.505, -0.09]; 
   };
+
   // Determine map center based on filtered donations or default
   const mapCenter = filteredDonations.length > 0 
     ? parseLatLng(filteredDonations[0].location) 
@@ -118,37 +152,53 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     { label: 'Delivered', value: DonationStatus.DELIVERED },
     { label: 'Cancelled', value: DonationStatus.CANCELLED },
   ];
+
   return (
-	<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 transition-all">
-		{/* Header & Stats */}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 transition-all">
+      {/* Header & Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-10">
         <div className="lg:col-span-2">
           <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-2 leading-tight">Share Circle <br/> Dashboard</h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            {user.role === UserRole.DONOR 
-              ? `Helping hearts grow, one share at a time, ${user.name.split(' ')[0]}.` 
-              : `Ready to connect and serve, ${user.name.split(' ')[0]}?`}
-          </p>
+          <div className="flex space-x-4 mt-4">
+            <button 
+              onClick={() => setActiveTab('donations')}
+              className={`px-6 py-2 rounded-xl font-bold transition ${activeTab === 'donations' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200 dark:shadow-none' : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-100 dark:border-gray-700'}`}
+            >
+              Donations
+            </button>
+            <button 
+              onClick={() => setActiveTab('market')}
+              className={`px-6 py-2 rounded-xl font-bold transition ${activeTab === 'market' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200 dark:shadow-none' : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-100 dark:border-gray-700'}`}
+            >
+              Marketplace
+            </button>
+          </div>
         </div>
-		 <div className="flex space-x-4 lg:col-span-2 lg:justify-end">
+        <div className="flex space-x-4 lg:col-span-2 lg:justify-end">
             <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 flex-1 lg:flex-none lg:w-32 shadow-sm text-center">
-                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">In Circle</p>
-                <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{donations.length}</p>
+                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">{activeTab === 'donations' ? 'Donations' : 'Items'}</p>
+                <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                  {activeTab === 'donations' ? donations.length : marketItems.length}
+                </p>
             </div>
             <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 flex-1 lg:flex-none lg:w-32 shadow-sm text-center">
                 <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Available</p>
                 <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-                    {donations.filter(d => d.status === DonationStatus.AVAILABLE).length}
+                    {activeTab === 'donations' 
+                      ? donations.filter(d => d.status === DonationStatus.AVAILABLE).length
+                      : marketItems.filter(i => i.status === MarketItemStatus.AVAILABLE).length
+                    }
                 </p>
             </div>
             {user.role === UserRole.DONOR && (
-                <Link to="/donate" className="flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl px-6 py-4 font-bold transition shadow-xl shadow-emerald-200 dark:shadow-none">
-                   + New Donation
+                <Link to={activeTab === 'donations' ? "/donate" : "/market/create"} className="flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl px-6 py-4 font-bold transition shadow-xl shadow-emerald-200 dark:shadow-none">
+                   + New {activeTab === 'donations' ? 'Donation' : 'Listing'}
                 </Link>
             )}
         </div>
       </div>
-	  {/* Controls */}
+
+      {/* Controls */}
       <div className="space-y-6 mb-8">
         <div className="flex flex-col lg:flex-row gap-4 justify-between items-center">
             {/* Search */}
@@ -162,8 +212,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                     onChange={(e) => setSearch(e.target.value)}
                 />
             </div>
-
-			  {/* View Mode Switcher */}
+            
+            {/* View Mode Switcher */}
             <div className="flex bg-white dark:bg-gray-800 p-1.5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
                 <button 
                     onClick={() => setViewMode('grid')}
@@ -179,7 +229,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                 </button>
             </div>
         </div>
-		 {/* Status Filters */}
+
+        {/* Status Filters */}
         <div className="flex flex-wrap gap-2 items-center">
             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mr-2">Filter Status:</span>
             {statusOptions.map((opt) => (
@@ -198,102 +249,157 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
         </div>
       </div>
 
-	  {/* Content Area */}
+      {/* Content Area */}
       <div className="min-h-[500px]">
-        {viewMode === 'grid' ? (
-          filteredDonations.length === 0 ? (
-            <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] p-20 text-center shadow-sm border border-gray-100 dark:border-gray-700 mt-4 animate-in fade-in duration-500">
-              <div className="text-6xl mb-6">🏜️</div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">The circle is quiet</h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-sm mx-auto">No donations match your current filters. Try adjusting your search or status.</p>
-            </div>
+        {activeTab === 'donations' ? (
+          viewMode === 'grid' ? (
+            filteredDonations.length === 0 ? (
+              <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] p-20 text-center shadow-sm border border-gray-100 dark:border-gray-700 mt-4 animate-in fade-in duration-500">
+                <div className="text-6xl mb-6">🏜️</div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">The circle is quiet</h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-sm mx-auto">No donations match your current filters. Try adjusting your search or status.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-4">
+                {filteredDonations.map((donation) => (
+                  <Link 
+                    to={`/donations/${donation.id}`} 
+                    key={donation.id} 
+                    className="group bg-white dark:bg-gray-800 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 flex flex-col hover:-translate-y-2 animate-in slide-in-from-bottom-4 duration-300"
+                  >
+                    <div className="relative h-56">
+                      <img 
+                        src={donation.imageUrl} 
+                        alt={donation.title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition duration-700"
+                      />
+                      <div className="absolute top-4 left-4">
+                        <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg ${
+                          donation.type === DonationType.FOOD ? 'bg-white/90 text-orange-600 backdrop-blur-md' : 'bg-white/90 text-blue-600 backdrop-blur-md'
+                        }`}>
+                          {donation.type}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-7 flex-grow">
+                      <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2 leading-tight truncate">{donation.title}</h3>
+                      <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-6">
+                        <span className="mr-2 opacity-70">📍</span>
+                        <span className="truncate">{donation.location}</span>
+                      </div>
+                      <div className="pt-6 border-t border-gray-50 dark:border-gray-700 flex justify-between items-center">
+                        <div className="flex items-center space-x-3">
+                          <img src={`https://ui-avatars.com/api/?name=${donation.donorName}&background=random`} className="w-8 h-8 rounded-lg" alt="Donor avatar" />
+                          <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{donation.donorName}</span>
+                        </div>
+                        <span className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
+                          donation.status === DonationStatus.AVAILABLE ? 'bg-emerald-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-500'
+                        }`}>
+                          {donation.status.replace('_', ' ')}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-4">
-              {filteredDonations.map((donation) => (
+            <div className="h-[600px] w-full rounded-[2.5rem] overflow-hidden shadow-xl border-4 border-white dark:border-gray-800 bg-gray-200 dark:bg-gray-950 mt-4 relative animate-in fade-in duration-500">
+               <MapContainer 
+                  center={mapCenter} 
+                  zoom={13} 
+                  scrollWheelZoom={true} 
+                  className="z-0 w-full h-full"
+               >
+                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' />
+                  <MapController center={mapCenter} />
+                  {filteredDonations.map((d) => {
+                    const pos = parseLatLng(d.location);
+                    return (
+                      <Marker 
+                          key={d.id} 
+                          position={pos}
+                          icon={d.type === DonationType.FOOD ? foodIcon : clothesIcon}
+                      >
+                          <Popup>
+                              <div className="p-1 min-w-[200px]">
+                                  <img src={d.imageUrl} className="w-full h-24 object-cover rounded-xl mb-3 shadow-sm" alt="Donation" />
+                                  <h4 className="font-black text-gray-900 text-lg mb-1 leading-tight">{d.title}</h4>
+                                  <p className="text-xs text-gray-500 mb-3 truncate">📍 {d.location}</p>
+                                  <div className="flex justify-between items-center mb-3">
+                                       <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${
+                                          d.status === DonationStatus.AVAILABLE ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
+                                      }`}>
+                                          {d.status.replace('_', ' ')}
+                                      </span>
+                                  </div>
+                                  <Link 
+                                      to={`/donations/${d.id}`}
+                                      className="block w-full text-center bg-emerald-600 text-white py-2 rounded-lg font-bold text-xs hover:bg-emerald-700 transition shadow-lg shadow-emerald-100"
+                                  >
+                                      View Details
+                                  </Link>
+                              </div>
+                          </Popup>
+                      </Marker>
+                    )
+                  })}
+               </MapContainer>
+            </div>
+          )
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-4">
+            {marketItems.length === 0 ? (
+              <div className="col-span-full bg-white dark:bg-gray-800 rounded-[2.5rem] p-20 text-center shadow-sm border border-gray-100 dark:border-gray-700 mt-4">
+                <div className="text-6xl mb-6">🛍️</div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">No market items yet</h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-sm mx-auto">Start selling food or groceries to see them here.</p>
+                <Link to="/market/create" className="inline-block bg-emerald-600 text-white px-8 py-3 rounded-2xl font-bold hover:bg-emerald-700 transition">
+                  List Item
+                </Link>
+              </div>
+            ) : (
+              marketItems.map((item) => (
                 <Link 
-                  to={`/donations/${donation.id}`} 
-                  key={donation.id} 
-                  className="group bg-white dark:bg-gray-800 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 flex flex-col hover:-translate-y-2 animate-in slide-in-from-bottom-4 duration-300"
+                  to={`/market/item/${item.id}`} 
+                  key={item.id} 
+                  className="group bg-white dark:bg-gray-800 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 flex flex-col hover:-translate-y-2"
                 >
                   <div className="relative h-56">
                     <img 
-                      src={donation.imageUrl} 
-                      alt={donation.title}
+                      src={item.imageUrl} 
+                      alt={item.title}
                       className="w-full h-full object-cover group-hover:scale-110 transition duration-700"
                     />
-                    <div className="absolute top-4 left-4">
-                      <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg ${
-                        donation.type === DonationType.FOOD ? 'bg-white/90 text-orange-600 backdrop-blur-md' : 'bg-white/90 text-blue-600 backdrop-blur-md'
-                      }`}>
-                        {donation.type}
+                    <div className="absolute top-4 right-4">
+                      <span className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md px-3 py-1 rounded-xl text-emerald-600 dark:text-emerald-400 font-black text-sm shadow-sm">
+                        ${item.price.toFixed(2)}
                       </span>
                     </div>
                   </div>
                   <div className="p-7 flex-grow">
-                    <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2 leading-tight truncate">{donation.title}</h3>
+                    <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2 leading-tight truncate">{item.title}</h3>
                     <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-6">
-                      <span className="mr-2 opacity-70">📍</span>
-                      <span className="truncate">{donation.location}</span>
+                      <span className="mr-2 opacity-70">🏷️</span>
+                      <span className="truncate">{item.category}</span>
                     </div>
                     <div className="pt-6 border-t border-gray-50 dark:border-gray-700 flex justify-between items-center">
                       <div className="flex items-center space-x-3">
-                        <img src={`https://ui-avatars.com/api/?name=${donation.donorName}&background=random`} className="w-8 h-8 rounded-lg" alt="Donor avatar" />
-                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{donation.donorName}</span>
+                        <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 font-bold text-xs">
+                          {item.sellerName.charAt(0)}
+                        </div>
+                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{item.sellerName}</span>
                       </div>
                       <span className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
-                        donation.status === DonationStatus.AVAILABLE ? 'bg-emerald-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-500'
+                        item.status === MarketItemStatus.AVAILABLE ? 'bg-emerald-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-500'
                       }`}>
-                        {donation.status.replace('_', ' ')}
+                        {item.status}
                       </span>
                     </div>
                   </div>
                 </Link>
-              ))}
-            </div>
-          )
-        ) : (
-          <div className="h-[600px] w-full rounded-[2.5rem] overflow-hidden shadow-xl border-4 border-white dark:border-gray-800 bg-gray-200 dark:bg-gray-950 mt-4 relative animate-in fade-in duration-500">
-             <MapContainer 
-                center={mapCenter} 
-                zoom={13} 
-                scrollWheelZoom={true} 
-                className="z-0 w-full h-full"
-             >
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' />
-                <MapController center={mapCenter} />
-                {filteredDonations.map((d) => {
-                  const pos = parseLatLng(d.location);
-                  // Only show markers that parsed correctly (not the default if the address was just text)
-                  return (
-                    <Marker 
-                        key={d.id} 
-                        position={pos}
-                        icon={d.type === DonationType.FOOD ? foodIcon : clothesIcon}
-                    >
-                        <Popup>
-                            <div className="p-1 min-w-[200px]">
-                                <img src={d.imageUrl} className="w-full h-24 object-cover rounded-xl mb-3 shadow-sm" alt="Donation" />
-                                <h4 className="font-black text-gray-900 text-lg mb-1 leading-tight">{d.title}</h4>
-                                <p className="text-xs text-gray-500 mb-3 truncate">📍 {d.location}</p>
-                                <div className="flex justify-between items-center mb-3">
-                                     <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${
-                                        d.status === DonationStatus.AVAILABLE ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
-                                    }`}>
-                                        {d.status.replace('_', ' ')}
-                                    </span>
-                                </div>
-                                <Link 
-                                    to={`/donations/${d.id}`}
-                                    className="block w-full text-center bg-emerald-600 text-white py-2 rounded-lg font-bold text-xs hover:bg-emerald-700 transition shadow-lg shadow-emerald-100"
-                                >
-                                    View Details
-                                </Link>
-                            </div>
-                        </Popup>
-                    </Marker>
-                  )
-                })}
-             </MapContainer>
+              ))
+            )}
           </div>
         )}
       </div>
