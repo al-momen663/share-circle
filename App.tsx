@@ -9,6 +9,7 @@ import AuthPage from './pages/AuthPage';
 import Dashboard from './pages/Dashboard';
 import CreateDonation from './pages/CreateDonation';
 import DonationDetails from './pages/DonationDetails';
+import EditDonation from './pages/EditDonation';
 import CreateMarketItem from './pages/CreateMarketItem';
 import Marketplace from './pages/Marketplace';
 import ChatRoom from './pages/ChatRoom';
@@ -95,6 +96,10 @@ const App: React.FC = () => {
             <Route 
               path="/donations/:id" 
               element={currentUser ? <DonationDetails user={currentUser} /> : <Navigate to="/auth" />} 
+            />
+            <Route 
+              path="/donations/edit/:id" 
+              element={currentUser?.role === 'DONOR' ? <EditDonation user={currentUser} /> : <Navigate to="/dashboard" />} 
             />
             <Route 
               path="/chat/:id" 
