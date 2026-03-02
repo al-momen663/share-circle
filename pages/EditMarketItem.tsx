@@ -26,3 +26,9 @@ const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
     imageUrl: '',
     status: MarketItemStatus.AVAILABLE
   });
+  useEffect(() => {
+    const fetchItem = async () => {
+      if (!id) return;
+      try {
+        const docRef = doc(db, 'market_items', id);
+        const docSnap = await getDoc(docRef);
