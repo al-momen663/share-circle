@@ -182,3 +182,29 @@ const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               />
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Category</label>
+                <select
+                  className="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-gray-700 focus:ring-0 transition-all text-gray-900 dark:text-white"
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value as MarketCategory })}
+                >
+                  <option value={MarketCategory.FOOD}>Food</option>
+                  <option value={MarketCategory.GROCERY}>Grocery</option>
+                  <option value={MarketCategory.FURNITURE}>Furniture</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Status</label>
+                <select
+                  className="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-gray-700 focus:ring-0 transition-all text-gray-900 dark:text-white"
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as MarketItemStatus })}
+                >
+                  <option value={MarketItemStatus.AVAILABLE}>Available</option>
+                  <option value={MarketItemStatus.SOLD}>Sold</option>
+                </select>
+              </div>
+            </div>
