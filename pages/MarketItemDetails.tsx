@@ -32,3 +32,14 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
     };
     fetchItem();
   }, [id, navigate]);
+  const handleBuy = async () => {
+    if (!item || !id) return;
+    setActionLoading(true);
+    try {
+      const docRef = doc(db, 'market_items', id);
+      await updateDoc(docRef, {
+        status: MarketItemStatus.SOLD,
+        buyerId: user.id,
+        buyerName: user.name,
+        soldAt: Date.now()
+      });
