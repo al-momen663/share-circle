@@ -32,3 +32,24 @@ const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
       try {
         const docRef = doc(db, 'market_items', id);
         const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data() as MarketItem;
+          if (data.sellerId !== user.id) {
+            alert("You are not authorized to edit this item.");
+            navigate('/marketplace');
+            return;
+          }
+          setFormData({
+            title: data.title,
+            description: data.description,
+            price: data.price.toString(),
+            originalPrice: data.originalPrice ? data.originalPrice.toString() : '',
+            category: data.category,
+            location: data.location,
+            imageUrl: data.imageUrl,
+            status: data.status
+          });
+          setImagePreview(data.imageUrl);
+        } else {
+          navigate('/marketplace');
+        }
