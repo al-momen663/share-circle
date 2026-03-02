@@ -87,17 +87,14 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
                 {item.category}
               </div>
             </div>
-            <div className="space-y-6 mb-10">
-                  <div>
-                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">Description</h3>
-                    <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-lg">{item.description}</p>
-                  </div>
-                  <div className="flex items-center text-gray-500 dark:text-gray-400">
-                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                     </svg>
-                     <span className="font-medium">{item.location}</span>
+            <div className="p-10 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white">{item.title}</h1>
+                  <div className="text-right">
+                    <span className="text-3xl font-bold text-emerald-600 dark:text-emerald-400 block">${item.price.toFixed(2)}</span>
+                    {item.originalPrice && item.originalPrice > item.price && (
+                      <span className="text-sm text-gray-400 line-through">${item.originalPrice.toFixed(2)}</span>
+                    )}
                   </div>
                 </div>
-              </div>
