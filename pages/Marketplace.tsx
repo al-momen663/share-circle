@@ -167,5 +167,17 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user }) => {
             })}
           </div>
         ) : (
+          <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-3xl border border-dashed border-gray-200 dark:border-gray-800">
+            <div className="text-5xl mb-4">🛒</div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No items found</h3>
+            <p className="text-gray-500 dark:text-gray-400">Be the first to list something for sale!</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Marketplace;
 
           
