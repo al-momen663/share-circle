@@ -7,3 +7,7 @@ import { MarketCategory, MarketItemStatus, User, MarketItem } from '../types';
 interface EditMarketItemProps {
   user: User;
 }
+const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
