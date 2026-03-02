@@ -121,5 +121,44 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
                   </div>
                 </div>
               </div>
+              <div className="pt-8 border-t border-gray-100 dark:border-gray-800">
+                {item.status === MarketItemStatus.AVAILABLE ? (
+                  isSeller ? (
+                    <div className="space-y-4">
+                      <Link 
+                        to={`/market/edit/${item.id}`}
+                        className="w-full flex justify-center items-center bg-emerald-600 text-white px-8 py-5 rounded-2xl font-bold text-xl hover:bg-emerald-700 transition shadow-xl shadow-emerald-200 dark:shadow-none"
+                      >
+                        Edit Listing
+                      </Link>
+                      <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-2xl text-emerald-700 dark:text-emerald-300 font-medium text-center">
+                        This is your listing. You'll be notified when someone buys it.
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleBuy}
+                      disabled={actionLoading}
+                      className="w-full bg-emerald-600 text-white px-8 py-5 rounded-2xl font-bold text-xl hover:bg-emerald-700 transition shadow-xl shadow-emerald-200 dark:shadow-none disabled:opacity-50"
+                    >
+                      {actionLoading ? 'Processing...' : 'Buy Now'}
+                    </button>
+                  )
+                ) : (
+                  <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-2xl text-gray-500 dark:text-gray-400 font-bold text-center text-xl uppercase tracking-widest">
+                    Sold Out
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default MarketItemDetails;
+
 
 
