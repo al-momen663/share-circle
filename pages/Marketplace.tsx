@@ -51,3 +51,30 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user }) => {
     item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
+          <div>
+            <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-2">Marketplace</h1>
+            <p className="text-gray-600 dark:text-gray-400">Buy and sell fresh food, groceries, and furniture within your community.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+              <input 
+                type="text" 
+                placeholder="Search items..."
+                className="pl-11 pr-4 py-3 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 focus:ring-2 focus:ring-emerald-500 outline-none transition dark:text-white shadow-sm w-full md:w-64"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <Link 
+              to="/market/create" 
+              className="bg-emerald-600 text-white px-6 py-3 rounded-2xl font-bold hover:bg-emerald-700 transition shadow-lg shadow-emerald-200 dark:shadow-none whitespace-nowrap"
+            >
+              Sell Item
+            </Link>
+          </div>
+        </div>
