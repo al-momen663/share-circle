@@ -13,3 +13,22 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
   const [item, setItem] = useState<MarketItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  useEffect(() => {
+    const fetchItem = async () => {
+      if (!id) return;
+      try {
+        const docRef = doc(db, 'market_items', id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setItem({ id: docSnap.id, ...docSnap.data() } as MarketItem);
+        } else {
+          navigate('/marketplace');
+        }
+      } catch (error) {
+        console.error("Error fetching market item:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchItem();
+  }, [id, navigate]);
