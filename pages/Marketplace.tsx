@@ -118,5 +118,54 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user }) => {
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       referrerPolicy="no-referrer"
                     />
+                    {discount > 0 && (
+                      <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full font-black text-xs shadow-lg animate-pulse">
+                        {discount}% OFF
+                      </div>
+                    )}
+
+                    <div className="absolute top-4 right-4 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md px-3 py-1 rounded-full text-emerald-600 dark:text-emerald-400 font-bold text-sm shadow-sm">
+                      ${item.price.toFixed(2)}
+                      {item.originalPrice && item.originalPrice > item.price && (
+                        <span className="ml-2 text-[10px] text-gray-400 line-through">
+                          ${item.originalPrice.toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="absolute bottom-4 left-4 bg-emerald-600/90 backdrop-blur-md px-3 py-1 rounded-full text-white text-xs font-bold uppercase tracking-wider">
+                      {item.category}
+                    </div>
+                  </div>
+
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-emerald-600 transition-colors">
+                      {item.title}
+                    </h3>
+
+                    <p className="text-gray-500 dark:text-gray-400 text-sm line-clamp-2 mb-4">
+                      {item.description}
+                    </p>
+
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-50 dark:border-gray-800">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 font-bold text-xs">
+                          {item.sellerName.charAt(0)}
+                        </div>
+                        <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                          {item.sellerName}
+                        </span>
+                      </div>
+
+                      <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">
+                        {new Date(item.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        ) : (
 
           
