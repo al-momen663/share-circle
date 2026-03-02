@@ -7,3 +7,8 @@ import { MarketItem, MarketItemStatus, User } from '../types';
 interface MarketplaceProps {
   user: User | null;
 }
+const Marketplace: React.FC<MarketplaceProps> = ({ user }) => {
+  const [items, setItems] = useState<MarketItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'ALL' | 'FOOD' | 'GROCERY' | 'FURNITURE'>('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
