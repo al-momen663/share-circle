@@ -1,30 +1,27 @@
- {
- "name": "share-circle",
+{
+  "name": "share-circle---food-&-clothes-donation-platform",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "tsc --noEmit"
   },
-
   "dependencies": {
-    "@google/genai": "^1.41.0",
-    "firebase": "^12.9.0",
-    "leaflet": "^1.9.4",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-router-dom": "^7.13.0",
     "react-leaflet": "^5.0.0",
-    "react-router-dom": "^7.13.0"
+    "leaflet": "^1.9.4",
+    "firebase": "^12.8.0",
+    "@google/genai": "^1.39.0"
   },
   "devDependencies": {
-    "@types/jquery": "^3.5.33",
-    "@types/leaflet": "^1.9.21",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.4",
-    "typescript": "^5.9.3",
-    "vite": "^7.3.1"
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
   }
 }
