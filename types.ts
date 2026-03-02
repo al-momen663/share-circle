@@ -1,12 +1,25 @@
 
 export enum UserRole {
   DONOR = 'DONOR',
-  VOLUNTEER = 'VOLUNTEER'
+  VOLUNTEER = 'VOLUNTEER',
+  MEMBER = 'MEMBER'
 }
 
 export enum DonationType {
   FOOD = 'FOOD',
   CLOTHES = 'CLOTHES'
+}
+
+export enum MarketCategory {
+  FOOD = 'FOOD',
+  GROCERY = 'GROCERY',
+  FURNITURE = 'FURNITURE'
+}
+
+export enum MarketItemStatus {
+  AVAILABLE = 'AVAILABLE',
+  SOLD = 'SOLD',
+  CANCELLED = 'CANCELLED'
 }
 
 export enum DonationStatus {
@@ -38,9 +51,25 @@ export interface Donation {
   createdAt: number;
 }
 
+export interface MarketItem {
+  id: string;
+  sellerId: string;
+  sellerName: string;
+  title: string;
+  description: string;
+  price: number;
+  originalPrice?: number;
+  category: MarketCategory;
+  status: MarketItemStatus;
+  location: string;
+  imageUrl: string;
+  createdAt: number;
+}
+
 export interface Message {
   id: string;
-  donationId: string;
+  donationId?: string;
+  marketItemId?: string;
   senderId: string;
   text: string;
   timestamp: number;
