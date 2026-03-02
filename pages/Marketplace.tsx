@@ -105,4 +105,18 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user }) => {
                 ? Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)
                 : 0;
 
+              return (
+                <Link 
+                  key={item.id} 
+                  to={`/market/item/${item.id}`}
+                  className="group bg-white dark:bg-gray-900 rounded-3xl overflow-hidden border border-gray-100 dark:border-gray-800 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
+                >
+                  <div className="relative h-56 overflow-hidden">
+                    <img 
+                      src={item.imageUrl || `https://picsum.photos/seed/${item.category.toLowerCase()}/400/300`} 
+                      alt={item.title}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      referrerPolicy="no-referrer"
+                    />
+
           
