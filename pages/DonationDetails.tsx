@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
@@ -7,6 +8,7 @@ import { User, UserRole, Donation, DonationStatus } from '../types';
 interface DonationDetailsProps {
   user: User;
 }
+
 const DonationDetails: React.FC<DonationDetailsProps> = ({ user }) => {
   const { id } = useParams<{ id: string }>();
   const [donation, setDonation] = useState<Donation | null>(null);
@@ -20,6 +22,7 @@ const DonationDetails: React.FC<DonationDetailsProps> = ({ user }) => {
     });
     return () => unsubscribe();
   }, [id]);
+
   const updateStatus = async (newStatus: DonationStatus, volunteerId?: string) => {
     if (!donation || !id) return;
     try {
@@ -37,6 +40,7 @@ const DonationDetails: React.FC<DonationDetailsProps> = ({ user }) => {
   const isDonor = donation.donorId === user.id;
   const isVolunteer = user.role === UserRole.VOLUNTEER;
   const isClaimedByMe = donation.volunteerId === user.id;
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <Link to="/dashboard" className="text-emerald-600 dark:text-emerald-400 font-bold mb-6 inline-block hover:underline">← Back to Dashboard</Link>
@@ -111,12 +115,20 @@ const DonationDetails: React.FC<DonationDetailsProps> = ({ user }) => {
               )}
 
               {isDonor && donation.status === DonationStatus.AVAILABLE && (
-                <button 
-                  onClick={() => updateStatus(DonationStatus.CANCELLED)}
-                  className="w-full py-4 bg-white dark:bg-gray-900 text-red-600 dark:text-red-400 border-2 border-red-100 dark:border-red-900/50 rounded-2xl font-black hover:bg-red-50 dark:hover:bg-red-950/30 transition"
-                >
-                  Cancel Posting
-                </button>
+                <div className="space-y-4">
+                  <Link 
+                    to={`/donations/edit/${donation.id}`}
+                    className="w-full py-4 flex justify-center items-center bg-emerald-600 text-white rounded-2xl font-black hover:bg-emerald-700 transition shadow-lg shadow-emerald-100 dark:shadow-none"
+                  >
+                    Edit Donation
+                  </Link>
+                  <button 
+                    onClick={() => updateStatus(DonationStatus.CANCELLED)}
+                    className="w-full py-4 bg-white dark:bg-gray-900 text-red-600 dark:text-red-400 border-2 border-red-100 dark:border-red-900/50 rounded-2xl font-black hover:bg-red-50 dark:hover:bg-red-950/30 transition"
+                  >
+                    Cancel Posting
+                  </button>
+                </div>
               )}
 
               {donation.status === DonationStatus.DELIVERED && (
@@ -139,4 +151,5 @@ const DonationDetails: React.FC<DonationDetailsProps> = ({ user }) => {
     </div>
   );
 };
+
 export default DonationDetails;
