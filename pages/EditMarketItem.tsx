@@ -53,3 +53,12 @@ const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
         } else {
           navigate('/marketplace');
         }
+      } catch (error) {
+        console.error("Error fetching market item:", error);
+      } finally {
+        setFetching(false);
+      }
+    };
+
+    fetchItem();
+  }, [id, user.id, navigate]);
