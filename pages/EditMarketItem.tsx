@@ -131,3 +131,16 @@ const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
             <h1 className="text-3xl font-extrabold mb-2">Edit Market Item</h1>
             <p className="text-emerald-100 opacity-90">Update your listing details for the community.</p>
           </div>
+          <form onSubmit={handleSubmit} className="p-8 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Item Title</label>
+                <input
+                  required
+                  type="text"
+                  placeholder="e.g. Fresh Organic Tomatoes"
+                  className="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-gray-700 focus:ring-0 transition-all text-gray-900 dark:text-white"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                />
+              </div>
