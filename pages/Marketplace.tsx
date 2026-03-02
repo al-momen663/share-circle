@@ -78,3 +78,18 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user }) => {
             </Link>
           </div>
         </div>
+        <div className="flex space-x-2 mb-8 overflow-x-auto pb-2">
+          {['ALL', 'FOOD', 'GROCERY', 'FURNITURE'].map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setFilter(cat as any)}
+              className={`px-6 py-2 rounded-xl font-medium transition-all whitespace-nowrap ${
+                filter === cat 
+                  ? 'bg-emerald-600 text-white shadow-md' 
+                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              {cat.charAt(0) + cat.slice(1).toLowerCase()}
+            </button>
+          ))}
+        </div>
