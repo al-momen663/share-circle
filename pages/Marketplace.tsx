@@ -47,3 +47,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user }) => {
 
     fetchItems();
   }, [filter]);
+  const filteredItems = items.filter(item => 
+    item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
