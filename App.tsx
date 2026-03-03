@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 // Fix: Import modular auth functions from the local firebase lib to resolve potential resolution errors
@@ -10,9 +11,11 @@ import Dashboard from './pages/Dashboard';
 import CreateDonation from './pages/CreateDonation';
 import DonationDetails from './pages/DonationDetails';
 import EditDonation from './pages/EditDonation';
-import CreateMarketItem from './pages/CreateMarketItem';
-import Marketplace from './pages/Marketplace';
 import ChatRoom from './pages/ChatRoom';
+import Marketplace from './pages/Marketplace';
+import CreateMarketItem from './pages/CreateMarketItem';
+import MarketItemDetails from './pages/MarketItemDetails';
+import EditMarketItem from './pages/EditMarketItem';
 import { User } from './types';
 
 const App: React.FC = () => {
@@ -21,7 +24,8 @@ const App: React.FC = () => {
   const [isDark, setIsDark] = useState(() => {
     return localStorage.getItem('kindshare_theme') === 'dark';
   });
-   useEffect(() => {
+
+  useEffect(() => {
     // Fix: Use modular onAuthStateChanged with the auth instance correctly
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
@@ -44,6 +48,7 @@ const App: React.FC = () => {
 
     return () => unsubscribe();
   }, []);
+
   useEffect(() => {
     if (isDark) {
       document.documentElement.classList.add('dark');
@@ -113,10 +118,19 @@ const App: React.FC = () => {
               path="/market/create" 
               element={currentUser ? <CreateMarketItem user={currentUser} /> : <Navigate to="/auth" />} 
             />
+            <Route 
+              path="/market/item/:id" 
+              element={currentUser ? <MarketItemDetails user={currentUser} /> : <Navigate to="/auth" />} 
+            />
+            <Route 
+              path="/market/edit/:id" 
+              element={currentUser ? <EditMarketItem user={currentUser} /> : <Navigate to="/auth" />} 
+            />
           </Routes>
         </main>
       </div>
     </Router>
   );
 };
+
 export default App;
