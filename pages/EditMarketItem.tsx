@@ -256,3 +256,23 @@ const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
                   </div>
                 )}
               </div>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                className="hidden" 
+                accept="image/*"
+              />
+
+              <div className="text-center">
+                <span className="text-xs text-gray-400">OR</span>
+              </div>
+
+              <input
+                type="url"
+                placeholder="Paste image URL instead"
+                className="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-gray-700 focus:ring-0 transition-all text-gray-900 dark:text-white"
+                value={formData.imageUrl}
+                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+              />
+            </div>
