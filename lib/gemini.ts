@@ -1,7 +1,8 @@
 
+
 import { GoogleGenAI } from "@google/genai";
 
-const apiKey = (import.meta.env.VITE_GEMINI_API_KEY || "") as string;
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 /**
@@ -9,7 +10,7 @@ const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
  * Returns [lat, lng] or null.
  */
 export const geocodeWithGemini = async (address: string): Promise<[number, number] | null> => {
-	if (!ai || !apiKey) return null;
+	if (!ai) return null;
 
 	try {
 		const response = await ai.models.generateContent({

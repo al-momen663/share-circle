@@ -28,15 +28,10 @@ const CreateDonation: React.FC<CreateDonationProps> = ({ user }) => {
       alert("Please enter a title first!");
       return;
     }
-
+    
     setAiLoading(true);
     try {
-      const apiKey = (import.meta.env.VITE_GEMINI_API_KEY || "") as string;
-      if (!apiKey) {
-        alert("Gemini API key is not configured");
-        setAiLoading(false);
-        return;
-      }
+      const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || "";
       const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
@@ -45,8 +40,7 @@ const CreateDonation: React.FC<CreateDonationProps> = ({ user }) => {
           Type: ${type}
           Keep it under 60 words and emphasize the positive impact.`,
       });
-
-
+      
       const aiText = response.text;
       if (aiText) {
         setDescription(aiText.trim());
@@ -113,31 +107,31 @@ const CreateDonation: React.FC<CreateDonationProps> = ({ user }) => {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="bg-white dark:bg-gray-800 rounded-[3rem] shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-700 flex flex-col md:flex-row">
         <div className="md:w-1/3 bg-emerald-600 p-12 text-white flex flex-col justify-between">
-          <div>
-            <h1 className="text-4xl font-black mb-6 leading-tight">Share Your <br /> Abundance</h1>
-            <p className="opacity-90 text-emerald-50 leading-relaxed mb-10">Help your neighbors by sharing what you no longer need.</p>
-            <div className="space-y-6">
-              <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center">
-                  <Camera className="w-6 h-6" />
+            <div>
+                <h1 className="text-4xl font-black mb-6 leading-tight">Share Your <br/> Abundance</h1>
+                <p className="opacity-90 text-emerald-50 leading-relaxed mb-10">Help your neighbors by sharing what you no longer need.</p>
+                <div className="space-y-6">
+                    <div className="flex items-center space-x-4">
+                        <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center">
+                          <Camera className="w-6 h-6" />
+                        </div>
+                        <span className="font-bold">Photos</span>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                        <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center">
+                          <MapPin className="w-6 h-6" />
+                        </div>
+                        <span className="font-bold">Location</span>
+                    </div>
                 </div>
-                <span className="font-bold">Photos</span>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center">
-                  <MapPin className="w-6 h-6" />
-                </div>
-                <span className="font-bold">Location</span>
-              </div>
             </div>
-          </div>
-          <div className="mt-12 opacity-50 text-xs font-bold uppercase tracking-widest text-center">Share Circle</div>
+            <div className="mt-12 opacity-50 text-xs font-bold uppercase tracking-widest text-center">Share Circle</div>
         </div>
 
         <form onSubmit={handleSubmit} className="flex-grow p-12 space-y-6 overflow-y-auto max-h-[80vh]">
           <div>
             <label className="block text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Donation Title</label>
-            <input
+            <input 
               type="text" required value={title} onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g., Fresh Organic Apples"
               className="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border-none focus:ring-2 focus:ring-emerald-500 outline-none transition dark:text-white"
@@ -151,14 +145,14 @@ const CreateDonation: React.FC<CreateDonationProps> = ({ user }) => {
 
           <div className="space-y-6">
             <div className="relative">
-              <LocationSearch
+              <LocationSearch 
                 label="Pickup Location / Address"
                 value={pickupLocation}
                 onChange={setPickupLocation}
                 placeholder="Search for pickup address..."
               />
-              <button
-                type="button"
+              <button 
+                type="button" 
                 onClick={handleGetLocation}
                 className="absolute right-2 top-11 px-4 py-2 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-200 transition"
               >
@@ -166,7 +160,7 @@ const CreateDonation: React.FC<CreateDonationProps> = ({ user }) => {
               </button>
             </div>
 
-            <LocationSearch
+            <LocationSearch 
               label="Drop-off Location (Optional)"
               value={dropoffLocation}
               onChange={setDropoffLocation}
@@ -201,4 +195,5 @@ const CreateDonation: React.FC<CreateDonationProps> = ({ user }) => {
     </div>
   );
 };
+
 export default CreateDonation;

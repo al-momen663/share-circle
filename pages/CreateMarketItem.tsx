@@ -1,10 +1,14 @@
+
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, addDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
 import { MarketCategory, MarketItemStatus, User } from '../types';
-import { Camera, ShoppingBag } from 'lucide-react';
+import LocationSearch from '../components/LocationSearch';
+import { Camera, ShoppingBag, Sparkles, Loader2 } from 'lucide-react';
+import { GoogleGenAI } from "@google/genai";
+
 interface CreateMarketItemProps {
   user: User;
 }
@@ -16,6 +20,7 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -25,6 +30,37 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
     location: '',
     imageUrl: ''
   });
+
+  const generateAiDescription = async () => {
+    if (!formData.title) {
+      alert("Please enter a title first.");
+      return;
+    }
+    
+    setAiLoading(true);
+    try {
+      const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || "";
+      const ai = new GoogleGenAI({ apiKey });
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Write a warm, concise, and helpful description for a marketplace item.
+          Title: ${formData.title}
+          Category: ${formData.category}
+          Price: $${formData.price}
+          Make it sound appealing to potential buyers.`,
+      });
+      
+      if (response.text) {
+        setFormData(prev => ({ ...prev, description: response.text ?? '' }));
+      }
+    } catch (error) {
+      console.error("AI Generation Error:", error);
+      alert("Failed to generate description. Please try again.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -32,6 +68,7 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
       setImagePreview(URL.createObjectURL(file));
     }
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -44,14 +81,12 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
         const uploadTask = uploadBytesResumable(storageRef, imageFile);
 
         finalImageUrl = await new Promise((resolve, reject) => {
-          uploadTask.on(
-            'state_changed',
+          uploadTask.on('state_changed', 
             (snapshot) => {
-              const progress =
-                (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
               setUploadProgress(progress);
-            },
-            (error) => reject(error),
+            }, 
+            (error) => reject(error), 
             () => {
               getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
                 resolve(downloadURL);
@@ -60,23 +95,21 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
           );
         });
       }
+
       const itemData = {
         sellerId: user.id,
         sellerName: user.name,
         title: formData.title,
         description: formData.description,
         price: parseFloat(formData.price),
-        originalPrice: formData.originalPrice
-          ? parseFloat(formData.originalPrice)
-          : null,
+        originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : null,
         category: formData.category,
         status: MarketItemStatus.AVAILABLE,
         location: formData.location,
-        imageUrl:
-          finalImageUrl ||
-          `https://picsum.photos/seed/${formData.title}/800/600`,
-        createdAt: Date.now(),
+        imageUrl: finalImageUrl || `https://picsum.photos/seed/${formData.title}/800/600`,
+        createdAt: Date.now()
       };
+
       await addDoc(collection(db, 'market_items'), itemData);
       navigate('/marketplace');
     } catch (error) {
@@ -86,6 +119,7 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
       setLoading(false);
     }
   };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
@@ -97,7 +131,7 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
             </div>
             <ShoppingBag className="w-12 h-12 opacity-20" />
           </div>
-
+          
           <form onSubmit={handleSubmit} className="p-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -139,7 +173,22 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Description</label>
+              <div className="flex justify-between items-center">
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Description</label>
+                <button
+                  type="button"
+                  onClick={generateAiDescription}
+                  disabled={aiLoading || !formData.title}
+                  className="flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 disabled:opacity-50 transition-colors"
+                >
+                  {aiLoading ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-3 h-3" />
+                  )}
+                  AI Assist
+                </button>
+              </div>
               <textarea
                 required
                 rows={4}
@@ -163,21 +212,18 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
                   <option value={MarketCategory.FURNITURE}>Furniture</option>
                 </select>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Location</label>
-                <input
-                  required
-                  type="text"
-                  placeholder="Enter location..."
-                  className="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-gray-700 focus:ring-0 transition-all text-gray-900 dark:text-white"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                />
-              </div>
+              <LocationSearch 
+                label="Location"
+                value={formData.location}
+                onSelect={(val) => setFormData({ ...formData, location: val })}
+                onChange={(val) => setFormData({ ...formData, location: val })}
+                placeholder="Search for location..."
+              />
             </div>
+
             <div className="space-y-4">
               <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider block">Item Photo</label>
-              <div
+              <div 
                 onClick={() => fileInputRef.current?.click()}
                 className="w-full h-48 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 transition-colors bg-gray-50 dark:bg-gray-800 overflow-hidden relative"
               >
@@ -197,11 +243,11 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
                   </div>
                 )}
               </div>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                className="hidden"
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                className="hidden" 
                 accept="image/*"
               />
               <div className="text-center">
@@ -240,6 +286,3 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
 };
 
 export default CreateMarketItem;
-
-
-

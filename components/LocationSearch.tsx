@@ -4,21 +4,27 @@ import { Search, MapPin, Loader2 } from 'lucide-react';
 import { geocodeWithGemini } from '../lib/gemini';
 
 interface LocationSearchProps {
-  value: string;
-  onChange: (value: string) => void;
+  value?: string;
+  onChange?: (value: string) => void;
+  onSelect?: (value: string) => void;
+  initialValue?: string;
   placeholder?: string;
   label?: string;
 }
 
-const LocationSearch: React.FC<LocationSearchProps> = ({ value, onChange, placeholder, label }) => {
-  const [query, setQuery] = useState(value);
+const LocationSearch: React.FC<LocationSearchProps> = ({ value, onChange, onSelect, initialValue, placeholder, label }) => {
+  const [query, setQuery] = useState(value || initialValue || '');
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
-    setQuery(value);
+    if (value !== undefined) {
+      setQuery(value);
+    }
   }, [value]);
 
   useEffect(() => {
@@ -28,7 +34,10 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ value, onChange, placeh
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    };
   }, []);
 
   const searchLocation = async (text: string) => {
@@ -107,19 +116,21 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ value, onChange, placeh
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setQuery(val);
-    onChange(val);
+    if (onChange) onChange(val);
+    
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     
     // Debounce search
-    const timeoutId = setTimeout(() => {
+    searchTimeoutRef.current = setTimeout(() => {
       searchLocation(val);
     }, 500);
-    return () => clearTimeout(timeoutId);
   };
 
   const handleSelect = (result: any) => {
-    const displayValue = result.display_name;
+    const displayValue = `${result.display_name} (${result.lat}, ${result.lon})`;
     setQuery(displayValue);
-    onChange(displayValue);
+    if (onChange) onChange(displayValue);
+    if (onSelect) onSelect(displayValue);
     setShowResults(false);
   };
 

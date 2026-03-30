@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -5,10 +6,13 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
 import { MarketCategory, MarketItemStatus, User, MarketItem } from '../types';
 import LocationSearch from '../components/LocationSearch';
-// import { ShoppingBag, Camera, Loader2 } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
+import { GoogleGenAI } from "@google/genai";
+
 interface EditMarketItemProps {
   user: User;
 }
+
 const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -18,6 +22,7 @@ const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -28,6 +33,7 @@ const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
     imageUrl: '',
     status: MarketItemStatus.AVAILABLE
   });
+
   useEffect(() => {
     const fetchItem = async () => {
       if (!id) return;
@@ -64,6 +70,37 @@ const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
 
     fetchItem();
   }, [id, user.id, navigate]);
+
+  const generateAiDescription = async () => {
+    if (!formData.title) {
+      alert("Please enter a title first.");
+      return;
+    }
+    
+    setAiLoading(true);
+    try {
+      const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || "";
+      const ai = new GoogleGenAI({ apiKey });
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Write a warm, concise, and helpful description for a marketplace item.
+          Title: ${formData.title}
+          Category: ${formData.category}
+          Price: $${formData.price}
+          Make it sound appealing to potential buyers.`,
+      });
+      
+      if (response.text) {
+        setFormData(prev => ({ ...prev, description: response.text ?? "" }));
+      }
+    } catch (error) {
+      console.error("AI Generation Error:", error);
+      alert("Failed to generate description. Please try again.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -71,6 +108,7 @@ const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
       setImagePreview(URL.createObjectURL(file));
     }
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
@@ -84,12 +122,12 @@ const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
         const uploadTask = uploadBytesResumable(storageRef, imageFile);
 
         finalImageUrl = await new Promise((resolve, reject) => {
-          uploadTask.on('state_changed',
+          uploadTask.on('state_changed', 
             (snapshot) => {
               const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
               setUploadProgress(progress);
-            },
-            (error) => reject(error),
+            }, 
+            (error) => reject(error), 
             () => {
               getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
                 resolve(downloadURL);
@@ -98,6 +136,7 @@ const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
           );
         });
       }
+
       const docRef = doc(db, 'market_items', id);
       await updateDoc(docRef, {
         title: formData.title,
@@ -118,6 +157,7 @@ const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
       setLoading(false);
     }
   };
+
   if (fetching) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
@@ -125,6 +165,7 @@ const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
       </div>
     );
   }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
@@ -133,7 +174,7 @@ const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
             <h1 className="text-3xl font-extrabold mb-2">Edit Market Item</h1>
             <p className="text-emerald-100 opacity-90">Update your listing details for the community.</p>
           </div>
-
+          
           <form onSubmit={handleSubmit} className="p-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -175,7 +216,22 @@ const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Description</label>
+              <div className="flex justify-between items-center">
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Description</label>
+                <button
+                  type="button"
+                  onClick={generateAiDescription}
+                  disabled={aiLoading || !formData.title}
+                  className="flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 disabled:opacity-50 transition-colors"
+                >
+                  {aiLoading ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-3 h-3" />
+                  )}
+                  AI Assist
+                </button>
+              </div>
               <textarea
                 required
                 rows={4}
@@ -212,18 +268,18 @@ const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Location</label>
-              <LocationSearch
-                value={formData.location}
-                onChange={(location: string) => setFormData({ ...formData, location })}
-                placeholder="Search for item location..."
-              />
-            </div>
+            <LocationSearch 
+              label="Location"
+              value={formData.location}
+              initialValue={formData.location}
+              onSelect={(val) => setFormData({ ...formData, location: val })}
+              onChange={(val) => setFormData({ ...formData, location: val })}
+              placeholder="Search for item location..."
+            />
 
             <div className="space-y-4">
               <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider block">Item Photo</label>
-              <div
+              <div 
                 onClick={() => fileInputRef.current?.click()}
                 className="w-full h-48 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 transition-colors bg-gray-50 dark:bg-gray-800 overflow-hidden relative"
               >
@@ -243,11 +299,11 @@ const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
                   </div>
                 )}
               </div>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                className="hidden"
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                className="hidden" 
                 accept="image/*"
               />
               <div className="text-center">
