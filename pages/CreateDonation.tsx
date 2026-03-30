@@ -5,6 +5,8 @@ import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { User, DonationType, DonationStatus } from '../types';
 import { GoogleGenAI } from "@google/genai";
+import LocationSearch from '../components/LocationSearch';
+import { Camera, MapPin, Sparkles, Loader2 } from 'lucide-react';
 
 interface CreateDonationProps {
   user: User;
@@ -15,7 +17,8 @@ const CreateDonation: React.FC<CreateDonationProps> = ({ user }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState<DonationType>(DonationType.FOOD);
-  const [location, setLocation] = useState('');
+  const [pickupLocation, setPickupLocation] = useState('');
+  const [dropoffLocation, setDropoffLocation] = useState('');
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
@@ -28,7 +31,7 @@ const CreateDonation: React.FC<CreateDonationProps> = ({ user }) => {
     
     setAiLoading(true);
     try {
-      // Fix: Exclusively use process.env.API_KEY directly in the constructor as per guidelines
+      
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
@@ -38,7 +41,7 @@ const CreateDonation: React.FC<CreateDonationProps> = ({ user }) => {
           Keep it under 60 words and emphasize the positive impact.`,
       });
       
-      // Fix: Use response.text property directly (not as a method)
+      
       const aiText = response.text;
       if (aiText) {
         setDescription(aiText.trim());
@@ -63,7 +66,7 @@ const CreateDonation: React.FC<CreateDonationProps> = ({ user }) => {
   const handleGetLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => setLocation(`${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`),
+        (pos) => setPickupLocation(`${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`),
         () => alert("Location access denied. Please enter manually.")
       );
     } else {
@@ -73,7 +76,7 @@ const CreateDonation: React.FC<CreateDonationProps> = ({ user }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!location.trim()) {
+    if (!pickupLocation.trim()) {
       alert("Please provide a pickup location.");
       return;
     }
@@ -87,7 +90,8 @@ const CreateDonation: React.FC<CreateDonationProps> = ({ user }) => {
         description,
         type,
         status: DonationStatus.AVAILABLE,
-        location,
+        pickupLocation,
+        dropoffLocation: dropoffLocation || null,
         imageUrl: image || 'https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&q=80&w=800',
         createdAt: Date.now()
       });
@@ -109,11 +113,15 @@ const CreateDonation: React.FC<CreateDonationProps> = ({ user }) => {
                 <p className="opacity-90 text-emerald-50 leading-relaxed mb-10">Help your neighbors by sharing what you no longer need.</p>
                 <div className="space-y-6">
                     <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center text-xl">📸</div>
+                        <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center">
+                          <Camera className="w-6 h-6" />
+                        </div>
                         <span className="font-bold">Photos</span>
                     </div>
                     <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center text-xl">📍</div>
+                        <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center">
+                          <MapPin className="w-6 h-6" />
+                        </div>
                         <span className="font-bold">Location</span>
                     </div>
                 </div>
@@ -136,29 +144,35 @@ const CreateDonation: React.FC<CreateDonationProps> = ({ user }) => {
             <button type="button" onClick={() => setType(DonationType.CLOTHES)} className={`py-4 rounded-2xl border-2 font-black transition ${type === DonationType.CLOTHES ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400' : 'border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-400'}`}>👕 Clothes</button>
           </div>
 
-          <div>
-            <label className="block text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Pickup Location / Address</label>
+          <div className="space-y-6">
             <div className="relative">
-              <input 
-                type="text" required value={location} onChange={(e) => setLocation(e.target.value)}
-                placeholder="Enter street address or lat, lng..."
-                className="w-full pl-6 pr-28 py-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border-none focus:ring-2 focus:ring-emerald-500 outline-none transition dark:text-white"
+              <LocationSearch 
+                label="Pickup Location / Address"
+                value={pickupLocation}
+                onChange={setPickupLocation}
+                placeholder="Search for pickup address..."
               />
               <button 
                 type="button" 
                 onClick={handleGetLocation}
-                className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-200 transition"
+                className="absolute right-2 top-11 px-4 py-2 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-200 transition"
               >
                 📍 GPS
               </button>
             </div>
-            <p className="mt-2 text-[10px] text-gray-400 dark:text-gray-500 font-medium italic">Tip: GPS coordinates work best for the map!</p>
+
+            <LocationSearch 
+              label="Drop-off Location (Optional)"
+              value={dropoffLocation}
+              onChange={setDropoffLocation}
+              placeholder="Search for drop-off address (e.g., local charity)..."
+            />
           </div>
 
           <div>
             <label className="block text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Item Photo</label>
             <div onClick={() => document.getElementById('photo-input')?.click()} className="relative border-2 border-dashed border-gray-100 dark:border-gray-700 rounded-3xl h-48 flex items-center justify-center bg-gray-50 dark:bg-gray-900 overflow-hidden cursor-pointer hover:border-emerald-400 transition">
-              {image ? <img src={image} className="absolute inset-0 w-full h-full object-cover" /> : <div className="text-center"><span className="text-3xl block mb-2">📸</span><span className="text-gray-400 text-xs font-bold uppercase tracking-widest">Tap to upload</span></div>}
+              {image ? <img src={image} className="absolute inset-0 w-full h-full object-cover" /> : <div className="text-center"><Camera className="w-10 h-10 text-gray-300 mx-auto mb-2" /><span className="text-gray-400 text-xs font-bold uppercase tracking-widest">Tap to upload</span></div>}
               <input id="photo-input" type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
             </div>
           </div>
@@ -166,7 +180,10 @@ const CreateDonation: React.FC<CreateDonationProps> = ({ user }) => {
           <div>
             <div className="flex justify-between items-center mb-3">
               <label className="block text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Description</label>
-              <button type="button" onClick={handleAiAssist} disabled={aiLoading} className="text-[10px] font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-full hover:bg-emerald-200 transition">{aiLoading ? '✨' : '✨ AI Assist'}</button>
+              <button type="button" onClick={handleAiAssist} disabled={aiLoading} className="text-[10px] font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-full hover:bg-emerald-200 transition flex items-center space-x-1">
+                {aiLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                <span>{aiLoading ? 'Generating...' : 'AI Assist'}</span>
+              </button>
             </div>
             <textarea rows={3} required value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Tell us more about the donation..." className="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border-none focus:ring-2 focus:ring-emerald-500 outline-none transition dark:text-white resize-none" />
           </div>
@@ -179,5 +196,4 @@ const CreateDonation: React.FC<CreateDonationProps> = ({ user }) => {
     </div>
   );
 };
-
 export default CreateDonation;
