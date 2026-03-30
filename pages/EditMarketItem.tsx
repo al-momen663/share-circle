@@ -4,6 +4,8 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
 import { MarketCategory, MarketItemStatus, User, MarketItem } from '../types';
+import LocationSearch from '../components/LocationSearch';
+import { ShoppingBag, Camera, Loader2 } from 'lucide-react';
 interface EditMarketItemProps {
   user: User;
 }
@@ -131,6 +133,7 @@ const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
             <h1 className="text-3xl font-extrabold mb-2">Edit Market Item</h1>
             <p className="text-emerald-100 opacity-90">Update your listing details for the community.</p>
           </div>
+          
           <form onSubmit={handleSubmit} className="p-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -211,47 +214,31 @@ const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
 
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Location</label>
-              <input
-                required
-                type="text"
-                placeholder="e.g. Downtown, NY"
-                className="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-gray-700 focus:ring-0 transition-all text-gray-900 dark:text-white"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+              <LocationSearch
+                onSelect={(location) => setFormData({ ...formData, location })}
+                initialValue={formData.location}
+                placeholder="Search for item location..."
               />
             </div>
 
             <div className="space-y-4">
-              <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider block">
-                Item Photo
-              </label>
-
+              <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider block">Item Photo</label>
               <div 
                 onClick={() => fileInputRef.current?.click()}
                 className="w-full h-48 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 transition-colors bg-gray-50 dark:bg-gray-800 overflow-hidden relative"
               >
                 {imagePreview ? (
-                  <img 
-                    src={imagePreview} 
-                    alt="Preview" 
-                    className="w-full h-full object-cover" 
-                  />
+                  <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                 ) : (
                   <>
                     <span className="text-4xl mb-2">📸</span>
-                    <span className="text-sm text-gray-500">
-                      Click to upload photo
-                    </span>
+                    <span className="text-sm text-gray-500">Click to upload photo</span>
                   </>
                 )}
-
                 {loading && uploadProgress > 0 && (
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                     <div className="w-3/4 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-emerald-500 transition-all"
-                        style={{ width: `${uploadProgress}%` }}
-                      ></div>
+                      <div className="h-full bg-emerald-500 transition-all" style={{ width: `${uploadProgress}%` }}></div>
                     </div>
                   </div>
                 )}
@@ -263,11 +250,9 @@ const EditMarketItem: React.FC<EditMarketItemProps> = ({ user }) => {
                 className="hidden" 
                 accept="image/*"
               />
-
               <div className="text-center">
                 <span className="text-xs text-gray-400">OR</span>
               </div>
-
               <input
                 type="url"
                 placeholder="Paste image URL instead"
