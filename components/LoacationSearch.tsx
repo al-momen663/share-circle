@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, MapPin, Loader2 } from 'lucide-react';
+import { geocodeWithGemini } from '../lib/gemini';
 
 interface LocationSearchProps {
   value: string;
@@ -83,9 +84,20 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ value, onChange, placeh
           const data = await response.json();
           setResults(data);
           setShowResults(true);
+        } else {
+          throw new Error('Nominatim error');
         }
       } catch (nomError) {
-        console.error('Nominatim also failed:', nomError);
+        console.error('Nominatim also failed, trying Gemini:', nomError);
+        const geminiCoords = await geocodeWithGemini(text);
+        if (geminiCoords) {
+          setResults([{
+            display_name: text,
+            lat: geminiCoords[0],
+            lon: geminiCoords[1]
+          }]);
+          setShowResults(true);
+        }
       }
     } finally {
       setLoading(false);
