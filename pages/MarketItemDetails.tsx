@@ -7,6 +7,7 @@ import { MarketItem, MarketItemStatus, User } from '../types';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import { MapPin, ShoppingBag, Loader2, Navigation } from 'lucide-react';
+import { geocodeWithGemini } from '../lib/gemini';
 
 // Fix Leaflet marker icon issue
 import 'leaflet/dist/leaflet.css';
@@ -78,7 +79,9 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
                   }
                 }
               } catch (nomError) {
-                console.error("Nominatim geocoding also failed:", nomError);
+                console.error("Nominatim geocoding also failed, trying Gemini:", nomError);
+                const geminiCoords = await geocodeWithGemini(address);
+                if (geminiCoords) setCoords(geminiCoords);
               }
             }
           }
