@@ -7,7 +7,7 @@ import { db, storage } from '../lib/firebase';
 import { MarketCategory, MarketItemStatus, User } from '../types';
 import LocationSearch from '../components/LocationSearch';
 import { Camera, ShoppingBag, Sparkles, Loader2 } from 'lucide-react';
-import { GoogleGenAI } from "@google/genai";
+import { getGeminiClient, isGeminiConfigured } from '../lib/gemini';
 
 interface CreateMarketItemProps {
   user: User;
@@ -36,11 +36,19 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
       alert("Please enter a title first.");
       return;
     }
-    
+
     setAiLoading(true);
     try {
-      const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || "";
-      const ai = new GoogleGenAI({ apiKey });
+      if (!isGeminiConfigured) {
+        alert("Invalid Gemini API key. Ensure you're using a Google Generative Language API key (not sk- key).");
+        setAiLoading(false);
+        return;
+      }
+      const ai = getGeminiClient();
+      if (!ai) {
+        setAiLoading(false);
+        return;
+      }
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: `Write a warm, concise, and helpful description for a marketplace item.
@@ -49,7 +57,7 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
           Price: $${formData.price}
           Make it sound appealing to potential buyers.`,
       });
-      
+
       if (response.text) {
         setFormData(prev => ({ ...prev, description: response.text ?? '' }));
       }
@@ -81,12 +89,12 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
         const uploadTask = uploadBytesResumable(storageRef, imageFile);
 
         finalImageUrl = await new Promise((resolve, reject) => {
-          uploadTask.on('state_changed', 
+          uploadTask.on('state_changed',
             (snapshot) => {
               const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
               setUploadProgress(progress);
-            }, 
-            (error) => reject(error), 
+            },
+            (error) => reject(error),
             () => {
               getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
                 resolve(downloadURL);
@@ -131,7 +139,7 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
             </div>
             <ShoppingBag className="w-12 h-12 opacity-20" />
           </div>
-          
+
           <form onSubmit={handleSubmit} className="p-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -212,7 +220,7 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
                   <option value={MarketCategory.FURNITURE}>Furniture</option>
                 </select>
               </div>
-              <LocationSearch 
+              <LocationSearch
                 label="Location"
                 value={formData.location}
                 onSelect={(val) => setFormData({ ...formData, location: val })}
@@ -223,7 +231,7 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
 
             <div className="space-y-4">
               <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider block">Item Photo</label>
-              <div 
+              <div
                 onClick={() => fileInputRef.current?.click()}
                 className="w-full h-48 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 transition-colors bg-gray-50 dark:bg-gray-800 overflow-hidden relative"
               >
@@ -243,11 +251,11 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
                   </div>
                 )}
               </div>
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleFileChange} 
-                className="hidden" 
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
                 accept="image/*"
               />
               <div className="text-center">

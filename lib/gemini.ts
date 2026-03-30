@@ -2,8 +2,22 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
-const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
+const envKey = (import.meta.env.VITE_GEMINI_API_KEY || "").trim();
+const isOpenAIKey = envKey.startsWith("sk-");
+const isValidGeminiKey = envKey && !isOpenAIKey;
+
+if (!isValidGeminiKey) {
+	if (!envKey) {
+		console.warn("Gemini API key missing. Set VITE_GEMINI_API_KEY in .env.");
+	} else if (isOpenAIKey) {
+		console.warn("Detected OpenAI sk- key. Gemini API requires a Google API key.");
+	}
+}
+
+const ai = isValidGeminiKey ? new GoogleGenAI({ apiKey: envKey }) : null;
+
+export const getGeminiClient = () => ai;
+export const isGeminiConfigured = isValidGeminiKey;
 
 /**
  * Geocodes an address using Gemini AI as a fallback when traditional services fail.

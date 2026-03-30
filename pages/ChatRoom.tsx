@@ -1,19 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { 
-  collection, 
-  addDoc, 
-  onSnapshot, 
-  query, 
-  where, 
-  orderBy, 
-  doc, 
-  getDoc 
+import {
+  collection,
+  addDoc,
+  onSnapshot,
+  query,
+  where,
+  orderBy,
+  doc,
+  getDoc
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { User, Message, Donation } from '../types';
-// Import Gemini API
-import { GoogleGenAI } from "@google/genai";
+import { getGeminiClient, isGeminiConfigured } from '../lib/gemini';
 
 interface ChatRoomProps {
   user: User;
@@ -58,23 +57,32 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ user }) => {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
-    const fetchAiSuggestion = async () => {
+  const fetchAiSuggestion = async () => {
     if (!donation) return;
     setAiLoading(true);
     try {
-      
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+      if (!isGeminiConfigured) {
+        console.warn("Invalid Gemini API key. Ensure you're using a Google Generative Language API key (not sk- key).");
+        setAiLoading(false);
+        return;
+      }
+      const ai = getGeminiClient();
+      if (!ai) {
+        setAiLoading(false);
+        return;
+      }
       const prompt = `You are a helpful community assistant for a donation app. 
         Donation item: ${donation.title}
         Task: Suggest a one-sentence polite and safe coordination message (e.g., asking for pickup time or confirming location).
         Context: The user is a ${user.role.toLowerCase()}.`;
-      
+
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: prompt,
       });
-      
-      
+
+
       const text = response.text;
       if (text) setSuggestion(text.trim());
     } catch (error) {
@@ -86,7 +94,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ user }) => {
   const handleSendMessage = async (e: React.FormEvent | string) => {
     if (typeof e !== 'string') e.preventDefault();
     const textToSend = typeof e === 'string' ? e : inputText;
-    
+
     if (!textToSend.trim() || !id) return;
 
     try {
@@ -117,12 +125,12 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ user }) => {
           </div>
         </div>
         <div className="hidden sm:flex items-center space-x-2 bg-emerald-50 dark:bg-emerald-950 px-4 py-2 rounded-xl">
-           <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></span>
-           <span className="text-[10px] font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-widest">Real-time Connected</span>
+          <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></span>
+          <span className="text-[10px] font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-widest">Real-time Connected</span>
         </div>
       </div>
 
-      <div 
+      <div
         ref={scrollRef}
         className="flex-grow overflow-y-auto p-8 bg-gray-50 dark:bg-gray-900 space-y-6 scrollbar-hide border-x border-gray-100 dark:border-gray-800"
       >
@@ -133,15 +141,14 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ user }) => {
           </div>
         ) : (
           messages.map((msg) => (
-            <div 
-              key={msg.id} 
+            <div
+              key={msg.id}
               className={`flex ${msg.senderId === user.id ? 'justify-end' : 'justify-start'}`}
             >
-              <div className={`max-w-[80%] px-6 py-4 rounded-[2rem] shadow-sm transition-all ${
-                msg.senderId === user.id 
-                  ? 'bg-emerald-600 text-white rounded-tr-none shadow-emerald-100 dark:shadow-none' 
-                  : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-tl-none border border-gray-100 dark:border-gray-700'
-              }`}>
+              <div className={`max-w-[80%] px-6 py-4 rounded-[2rem] shadow-sm transition-all ${msg.senderId === user.id
+                ? 'bg-emerald-600 text-white rounded-tr-none shadow-emerald-100 dark:shadow-none'
+                : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-tl-none border border-gray-100 dark:border-gray-700'
+                }`}>
                 <p className="text-sm font-medium leading-relaxed">{msg.text}</p>
                 <div className={`text-[9px] mt-2 font-black uppercase tracking-widest opacity-60 text-right`}>
                   {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -154,7 +161,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ user }) => {
 
       <div className="px-6 py-3 bg-white dark:bg-gray-800 border-x border-gray-100 dark:border-gray-700">
         {!suggestion ? (
-          <button 
+          <button
             onClick={fetchAiSuggestion}
             disabled={aiLoading}
             className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest hover:underline flex items-center"
@@ -172,18 +179,18 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ user }) => {
         )}
       </div>
 
-      <form 
+      <form
         onSubmit={handleSendMessage}
         className="bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 p-6 rounded-b-[2.5rem] shadow-2xl flex space-x-3 z-10"
       >
-        <input 
-          type="text" 
+        <input
+          type="text"
           placeholder="Write a message..."
           className="flex-grow px-8 py-4 bg-gray-50 dark:bg-gray-900 border-none rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 text-sm transition dark:text-white placeholder-gray-400 font-medium"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
         />
-        <button 
+        <button
           type="submit"
           className="bg-emerald-600 text-white w-14 h-14 rounded-2xl flex items-center justify-center hover:bg-emerald-700 transition shadow-xl shadow-emerald-200 dark:shadow-none active:scale-95"
         >
