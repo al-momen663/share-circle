@@ -36,16 +36,52 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ value, onChange, placeh
       return;
     }
 
+    // Check if it's already a coordinate
+    const coordRegex = /^(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)$/;
+    const match = text.match(coordRegex);
+    if (match) {
+      setResults([{
+        display_name: text,
+        lat: match[1],
+        lon: match[3]
+      }]);
+      setShowResults(true);
+      return;
+    }
+
     setLoading(true);
     try {
+      // Try Nominatim first
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(text)}&limit=5`
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(text)}&limit=5`,
+        {
+          headers: {
+            'Accept': 'application/json',
+          },
+          mode: 'cors'
+        }
       );
+      
+      if (!response.ok) throw new Error('Nominatim error');
+      
       const data = await response.json();
       setResults(data);
       setShowResults(true);
     } catch (error) {
-      console.error('Error fetching locations:', error);
+      console.error('Nominatim failed, trying fallback:', error);
+      try {
+        // Fallback to geocode.maps.co (which is often more lenient with CORS/usage)
+        const fallbackResponse = await fetch(
+          `https://geocode.maps.co/search?q=${encodeURIComponent(text)}`
+        );
+        if (fallbackResponse.ok) {
+          const fallbackData = await fallbackResponse.json();
+          setResults(fallbackData.slice(0, 5));
+          setShowResults(true);
+        }
+      } catch (fallbackError) {
+        console.error('Fallback geocoding also failed:', fallbackError);
+      }
     } finally {
       setLoading(false);
     }
