@@ -29,6 +29,13 @@ const clothesIcon = new L.Icon({
     popupAnchor: [0, -35],
 });
 
+const marketIcon = new L.Icon({
+    iconUrl: 'https://cdn-icons-png.flaticon.com/512/1170/1170678.png',
+    iconSize: [35, 35],
+    iconAnchor: [17, 35],
+    popupAnchor: [0, -35],
+});
+
 // Helper component to handle map re-centering and fixing gray tiles
 const MapController = ({ center }: { center: [number, number] }) => {
   const map = useMap();
@@ -132,26 +139,54 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     return statusMatch && searchMatch;
   });
 
+  const filteredMarketItems = marketItems.filter(i => {
+    const statusMatch = filter === 'ALL' || i.status === filter;
+    const searchMatch = i.title.toLowerCase().includes(search.toLowerCase()) || 
+                       i.location.toLowerCase().includes(search.toLowerCase());
+    return statusMatch && searchMatch;
+  });
+
   const parseLatLng = (loc: string): [number, number] => {
     if (!loc) return [51.505, -0.09];
-    // Regex to handle "lat, lng", "lat lng", or simple floats
-    const matches = loc.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/) || loc.match(/(-?\d+\.\d+)\s+(-?\d+\.\d+)/);
-    if (matches) return [parseFloat(matches[1]), parseFloat(matches[2])];
+    // Handle "lat, lng" or "lat lng" with possible extra spaces and various formats
+    const coordRegex = /(-?\d+(\.\d+)?)\s*,\s*(-?\d+(\.\d+)?)/;
+    const spaceRegex = /(-?\d+(\.\d+)?)\s+(-?\d+(\.\d+)?)/;
+    
+    const match = loc.match(coordRegex) || loc.match(spaceRegex);
+    if (match) {
+      const lat = parseFloat(match[1]);
+      const lng = parseFloat(match[3] || match[2]); // match[3] for comma, match[2] for space
+      if (!isNaN(lat) && !isNaN(lng)) return [lat, lng];
+    }
     return [51.505, -0.09]; 
   };
 
-  // Determine map center based on filtered donations or default
-  const mapCenter = filteredDonations.length > 0 
-    ? parseLatLng(filteredDonations[0].location) 
-    : [51.505, -0.09] as [number, number];
+  // Determine map center based on filtered items or default
+  const getMapCenter = (): [number, number] => {
+    const currentList = activeTab === 'donations' ? filteredDonations : filteredMarketItems;
+    if (currentList.length > 0) {
+      return parseLatLng(currentList[0].location);
+    }
+    return [51.505, -0.09];
+  };
 
-  const statusOptions = [
+  const mapCenter = getMapCenter();
+
+  const donationStatusOptions = [
     { label: 'All', value: 'ALL' },
     { label: 'Available', value: DonationStatus.AVAILABLE },
     { label: 'Picked Up', value: DonationStatus.PICKED_UP },
     { label: 'Delivered', value: DonationStatus.DELIVERED },
     { label: 'Cancelled', value: DonationStatus.CANCELLED },
   ];
+
+  const marketStatusOptions = [
+    { label: 'All', value: 'ALL' },
+    { label: 'Available', value: MarketItemStatus.AVAILABLE },
+    { label: 'Sold', value: MarketItemStatus.SOLD },
+  ];
+
+  const statusOptions = activeTab === 'donations' ? donationStatusOptions : marketStatusOptions;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 transition-all">
@@ -251,8 +286,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
 
       {/* Content Area */}
       <div className="min-h-[500px]">
-        {activeTab === 'donations' ? (
-          viewMode === 'grid' ? (
+        {viewMode === 'grid' ? (
+          activeTab === 'donations' ? (
             filteredDonations.length === 0 ? (
               <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] p-20 text-center shadow-sm border border-gray-100 dark:border-gray-700 mt-4 animate-in fade-in duration-500">
                 <div className="text-6xl mb-6">🏜️</div>
@@ -304,16 +339,73 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
               </div>
             )
           ) : (
-            <div className="h-[600px] w-full rounded-[2.5rem] overflow-hidden shadow-xl border-4 border-white dark:border-gray-800 bg-gray-200 dark:bg-gray-950 mt-4 relative animate-in fade-in duration-500">
-               <MapContainer 
-                  center={mapCenter} 
-                  zoom={13} 
-                  scrollWheelZoom={true} 
-                  className="z-0 w-full h-full"
-               >
-                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' />
-                  <MapController center={mapCenter} />
-                  {filteredDonations.map((d) => {
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-4">
+              {filteredMarketItems.length === 0 ? (
+                <div className="col-span-full bg-white dark:bg-gray-800 rounded-[2.5rem] p-20 text-center shadow-sm border border-gray-100 dark:border-gray-700 mt-4">
+                  <div className="text-6xl mb-6">🛍️</div>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">No market items yet</h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-sm mx-auto">Start selling food or groceries to see them here.</p>
+                  <Link to="/market/create" className="inline-block bg-emerald-600 text-white px-8 py-3 rounded-2xl font-bold hover:bg-emerald-700 transition">
+                    List Item
+                  </Link>
+                </div>
+              ) : (
+                filteredMarketItems.map((item) => (
+                  <Link 
+                    to={`/market/item/${item.id}`} 
+                    key={item.id} 
+                    className="group bg-white dark:bg-gray-800 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 flex flex-col hover:-translate-y-2"
+                  >
+                    <div className="relative h-56">
+                      <img 
+                        src={item.imageUrl} 
+                        alt={item.title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition duration-700"
+                      />
+                      <div className="absolute top-4 right-4">
+                        <span className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md px-3 py-1 rounded-xl text-emerald-600 dark:text-emerald-400 font-black text-sm shadow-sm">
+                          ${item.price.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-7 flex-grow">
+                      <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2 leading-tight truncate">{item.title}</h3>
+                      <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-6">
+                        <span className="mr-2 opacity-70">🏷️</span>
+                        <span className="truncate">{item.category}</span>
+                      </div>
+                      <div className="pt-6 border-t border-gray-50 dark:border-gray-700 flex justify-between items-center">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 font-bold text-xs">
+                            {item.sellerName.charAt(0)}
+                          </div>
+                          <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{item.sellerName}</span>
+                        </div>
+                        <span className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
+                          item.status === MarketItemStatus.AVAILABLE ? 'bg-emerald-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-500'
+                        }`}>
+                          {item.status}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
+          )
+        ) : (
+          <div className="h-[600px] w-full rounded-[2.5rem] overflow-hidden shadow-xl border-4 border-white dark:border-gray-800 bg-gray-200 dark:bg-gray-950 mt-4 relative animate-in fade-in duration-500">
+             <MapContainer 
+                center={mapCenter} 
+                zoom={13} 
+                scrollWheelZoom={true} 
+                className="z-0 w-full h-full"
+             >
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' />
+                <MapController center={mapCenter} />
+                
+                {activeTab === 'donations' ? (
+                  filteredDonations.map((d) => {
                     const pos = parseLatLng(d.location);
                     return (
                       <Marker 
@@ -343,63 +435,35 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                           </Popup>
                       </Marker>
                     )
-                  })}
-               </MapContainer>
-            </div>
-          )
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-4">
-            {marketItems.length === 0 ? (
-              <div className="col-span-full bg-white dark:bg-gray-800 rounded-[2.5rem] p-20 text-center shadow-sm border border-gray-100 dark:border-gray-700 mt-4">
-                <div className="text-6xl mb-6">🛍️</div>
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">No market items yet</h3>
-                <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-sm mx-auto">Start selling food or groceries to see them here.</p>
-                <Link to="/market/create" className="inline-block bg-emerald-600 text-white px-8 py-3 rounded-2xl font-bold hover:bg-emerald-700 transition">
-                  List Item
-                </Link>
-              </div>
-            ) : (
-              marketItems.map((item) => (
-                <Link 
-                  to={`/market/item/${item.id}`} 
-                  key={item.id} 
-                  className="group bg-white dark:bg-gray-800 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 flex flex-col hover:-translate-y-2"
-                >
-                  <div className="relative h-56">
-                    <img 
-                      src={item.imageUrl} 
-                      alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition duration-700"
-                    />
-                    <div className="absolute top-4 right-4">
-                      <span className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md px-3 py-1 rounded-xl text-emerald-600 dark:text-emerald-400 font-black text-sm shadow-sm">
-                        ${item.price.toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="p-7 flex-grow">
-                    <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2 leading-tight truncate">{item.title}</h3>
-                    <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-6">
-                      <span className="mr-2 opacity-70">🏷️</span>
-                      <span className="truncate">{item.category}</span>
-                    </div>
-                    <div className="pt-6 border-t border-gray-50 dark:border-gray-700 flex justify-between items-center">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 font-bold text-xs">
-                          {item.sellerName.charAt(0)}
-                        </div>
-                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{item.sellerName}</span>
-                      </div>
-                      <span className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
-                        item.status === MarketItemStatus.AVAILABLE ? 'bg-emerald-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-500'
-                      }`}>
-                        {item.status}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))
-            )}
+                  })
+                ) : (
+                  filteredMarketItems.map((item) => {
+                    const pos = parseLatLng(item.location);
+                    return (
+                      <Marker 
+                          key={item.id} 
+                          position={pos}
+                          icon={marketIcon}
+                      >
+                          <Popup>
+                              <div className="p-1 min-w-[200px]">
+                                  <img src={item.imageUrl} className="w-full h-24 object-cover rounded-xl mb-3 shadow-sm" alt="Market Item" />
+                                  <h4 className="font-black text-gray-900 text-lg mb-1 leading-tight">{item.title}</h4>
+                                  <p className="text-xs text-gray-500 mb-1 truncate">📍 {item.location}</p>
+                                  <p className="text-emerald-600 font-bold mb-3">${item.price.toFixed(2)}</p>
+                                  <Link 
+                                      to={`/market/item/${item.id}`}
+                                      className="block w-full text-center bg-emerald-600 text-white py-2 rounded-lg font-bold text-xs hover:bg-emerald-700 transition shadow-lg shadow-emerald-100"
+                                  >
+                                      View Item
+                                  </Link>
+                              </div>
+                          </Popup>
+                      </Marker>
+                    )
+                  })
+                )}
+             </MapContainer>
           </div>
         )}
       </div>
@@ -408,3 +472,4 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
 };
 
 export default Dashboard;
+
