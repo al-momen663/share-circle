@@ -3,16 +3,37 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { doc, getDoc, updateDoc, collection, addDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { MarketItem, MarketItemStatus, User } from '../types';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import { MapPin, ShoppingBag, Loader2, Navigation } from 'lucide-react';
+
+// Fix Leaflet marker icon issue
+import 'leaflet/dist/leaflet.css';
+
+const iconUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png';
+const shadowUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png';
+
+let DefaultIcon = L.icon({
+    iconUrl,
+    shadowUrl,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41]
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
 
 interface MarketItemDetailsProps {
   user: User;
 }
+
 const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [item, setItem] = useState<MarketItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [coords, setCoords] = useState<[number, number] | null>(null);
+
   useEffect(() => {
     const fetchItem = async () => {
       if (!id) return;
@@ -20,7 +41,19 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
         const docRef = doc(db, 'market_items', id);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setItem({ id: docSnap.id, ...docSnap.data() } as MarketItem);
+          const itemData = { id: docSnap.id, ...docSnap.data() } as MarketItem;
+          setItem(itemData);
+          
+          // Geocode location
+          try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(itemData.location)}&limit=1`);
+            const data = await response.json();
+            if (data && data.length > 0) {
+              setCoords([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
+            }
+          } catch (error) {
+            console.error("Geocoding error:", error);
+          }
         } else {
           navigate('/marketplace');
         }
@@ -30,8 +63,10 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
         setLoading(false);
       }
     };
+
     fetchItem();
   }, [id, navigate]);
+
   const handleBuy = async () => {
     if (!item || !id) return;
     setActionLoading(true);
@@ -44,6 +79,7 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
         soldAt: Date.now()
       });
       
+      // Create a notification or message for the seller
       await addDoc(collection(db, 'messages'), {
         marketItemId: id,
         senderId: user.id,
@@ -60,6 +96,7 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
       setActionLoading(false);
     }
   };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
@@ -69,7 +106,9 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
   }
 
   if (!item) return null;
+
   const isSeller = item.sellerId === user.id;
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
@@ -79,14 +118,21 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
           </svg>
           Back to Marketplace
         </Link>
+
         <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800">
           <div className="grid grid-cols-1 lg:grid-cols-2">
             <div className="relative h-96 lg:h-full overflow-hidden">
-              <img src={item.imageUrl || 'https://picsum.photos/seed/food/800/600'} alt={item.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              <img 
+                src={item.imageUrl || 'https://picsum.photos/seed/food/800/600'} 
+                alt={item.title}
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
               <div className="absolute top-6 left-6 bg-emerald-600/90 backdrop-blur-md px-4 py-2 rounded-full text-white font-bold text-sm uppercase tracking-widest">
                 {item.category}
               </div>
             </div>
+
             <div className="p-10 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-6">
@@ -98,6 +144,7 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
                     )}
                   </div>
                 </div>
+
                 <div className="flex items-center space-x-4 mb-8 p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl">
                   <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 font-bold text-xl">
                     {item.sellerName.charAt(0)}
@@ -107,20 +154,46 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
                     <p className="text-lg font-bold text-gray-900 dark:text-white">{item.sellerName}</p>
                   </div>
                 </div>
+
                 <div className="space-y-6 mb-10">
                   <div>
                     <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">Description</h3>
                     <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-lg">{item.description}</p>
                   </div>
-                  <div className="flex items-center text-gray-500 dark:text-gray-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span className="font-medium">{item.location}</span>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center text-gray-500 dark:text-gray-400">
+                      <MapPin className="h-5 w-5 mr-2 text-emerald-600" />
+                      <span className="font-medium">{item.location}</span>
+                    </div>
+                    
+                    <div className="h-64 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 relative">
+                      {coords ? (
+                        <MapContainer 
+                          center={coords} 
+                          zoom={13} 
+                          className="h-full w-full"
+                          scrollWheelZoom={false}
+                        >
+                          <TileLayer
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                          />
+                          <Marker position={coords}>
+                            <Popup>{item.location}</Popup>
+                          </Marker>
+                        </MapContainer>
+                      ) : (
+                        <div className="h-full flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800 text-gray-400">
+                          <Loader2 className="animate-spin mb-2" />
+                          <p className="text-xs uppercase tracking-widest font-bold">Loading Map...</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
+
               <div className="pt-8 border-t border-gray-100 dark:border-gray-800">
                 {item.status === MarketItemStatus.AVAILABLE ? (
                   isSeller ? (
