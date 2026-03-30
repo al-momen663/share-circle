@@ -51,36 +51,41 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ value, onChange, placeh
 
     setLoading(true);
     try {
-      // Try Nominatim first
+      // Try Photon (Komoot) first - faster and more lenient CORS
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(text)}&limit=5`,
-        {
-          headers: {
-            'Accept': 'application/json',
-          },
-          mode: 'cors'
-        }
+        `https://photon.komoot.io/api/?q=${encodeURIComponent(text)}&limit=5`
       );
       
-      if (!response.ok) throw new Error('Nominatim error');
+      if (!response.ok) throw new Error('Photon error');
       
       const data = await response.json();
-      setResults(data);
+      const formattedResults = data.features.map((f: any) => ({
+        display_name: [
+          f.properties.name,
+          f.properties.street,
+          f.properties.city,
+          f.properties.state,
+          f.properties.country
+        ].filter(Boolean).join(', '),
+        lat: f.geometry.coordinates[1],
+        lon: f.geometry.coordinates[0]
+      }));
+      
+      setResults(formattedResults);
       setShowResults(true);
     } catch (error) {
-      console.error('Nominatim failed, trying fallback:', error);
+      console.error('Photon failed, trying Nominatim:', error);
       try {
-        // Fallback to geocode.maps.co (which is often more lenient with CORS/usage)
-        const fallbackResponse = await fetch(
-          `https://geocode.maps.co/search?q=${encodeURIComponent(text)}`
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(text)}&limit=5`
         );
-        if (fallbackResponse.ok) {
-          const fallbackData = await fallbackResponse.json();
-          setResults(fallbackData.slice(0, 5));
+        if (response.ok) {
+          const data = await response.json();
+          setResults(data);
           setShowResults(true);
         }
-      } catch (fallbackError) {
-        console.error('Fallback geocoding also failed:', fallbackError);
+      } catch (nomError) {
+        console.error('Nominatim also failed:', nomError);
       }
     } finally {
       setLoading(false);
