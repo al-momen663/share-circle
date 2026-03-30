@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { doc, getDoc, updateDoc, collection, addDoc } from 'firebase/firestore';
@@ -45,14 +46,42 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
           setItem(itemData);
           
           // Geocode location
-          try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(itemData.location)}&limit=1`);
-            const data = await response.json();
-            if (data && data.length > 0) {
-              setCoords([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
+          const address = itemData.location;
+          // Check if it's already a coordinate
+          const coordRegex = /^(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)$/;
+          const match = address.match(coordRegex);
+          if (match) {
+            setCoords([parseFloat(match[1]), parseFloat(match[3])]);
+          } else {
+            try {
+              const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
+                { mode: 'cors' }
+              );
+              if (response.ok) {
+                const data = await response.json();
+                if (data && data.length > 0) {
+                  setCoords([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
+                } else {
+                  throw new Error('No results from Nominatim');
+                }
+              } else {
+                throw new Error('Nominatim error');
+              }
+            } catch (error) {
+              console.error("Nominatim geocoding failed, trying fallback:", error);
+              try {
+                const fallbackResponse = await fetch(`https://geocode.maps.co/search?q=${encodeURIComponent(address)}`);
+                if (fallbackResponse.ok) {
+                  const fallbackData = await fallbackResponse.json();
+                  if (fallbackData && fallbackData.length > 0) {
+                    setCoords([parseFloat(fallbackData[0].lat), parseFloat(fallbackData[0].lon)]);
+                  }
+                }
+              } catch (fallbackError) {
+                console.error("Fallback geocoding also failed:", fallbackError);
+              }
             }
-          } catch (error) {
-            console.error("Geocoding error:", error);
           }
         } else {
           navigate('/marketplace');
@@ -232,6 +261,3 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
 };
 
 export default MarketItemDetails;
-
-
-
