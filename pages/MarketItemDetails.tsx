@@ -54,32 +54,31 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
             setCoords([parseFloat(match[1]), parseFloat(match[3])]);
           } else {
             try {
-              const response = await fetch(
-                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
-                { mode: 'cors' }
-              );
+              // Try Photon (Komoot) first - faster and more lenient CORS
+              const response = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(address)}&limit=1`);
               if (response.ok) {
                 const data = await response.json();
-                if (data && data.length > 0) {
-                  setCoords([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
+                if (data.features && data.features.length > 0) {
+                  const f = data.features[0];
+                  setCoords([f.geometry.coordinates[1], f.geometry.coordinates[0]]);
                 } else {
-                  throw new Error('No results from Nominatim');
+                  throw new Error('No results from Photon');
                 }
               } else {
-                throw new Error('Nominatim error');
+                throw new Error('Photon error');
               }
             } catch (error) {
-              console.error("Nominatim geocoding failed, trying fallback:", error);
+              console.error("Photon geocoding failed, trying Nominatim:", error);
               try {
-                const fallbackResponse = await fetch(`https://geocode.maps.co/search?q=${encodeURIComponent(address)}`);
-                if (fallbackResponse.ok) {
-                  const fallbackData = await fallbackResponse.json();
-                  if (fallbackData && fallbackData.length > 0) {
-                    setCoords([parseFloat(fallbackData[0].lat), parseFloat(fallbackData[0].lon)]);
+                const nomResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`);
+                if (nomResponse.ok) {
+                  const data = await nomResponse.json();
+                  if (data && data.length > 0) {
+                    setCoords([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
                   }
                 }
-              } catch (fallbackError) {
-                console.error("Fallback geocoding also failed:", fallbackError);
+              } catch (nomError) {
+                console.error("Nominatim geocoding also failed:", nomError);
               }
             }
           }
