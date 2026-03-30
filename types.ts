@@ -46,7 +46,8 @@ export interface Donation {
   description: string;
   type: DonationType;
   status: DonationStatus;
-  location: string;
+  pickupLocation: string;
+  dropoffLocation?: string;
   imageUrl: string;
   createdAt: number;
 }
