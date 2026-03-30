@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { MarketItem, MarketItemStatus, User } from '../types';
 
 interface MarketplaceProps {
   user: User | null;
 }
-const Marketplace: React.FC<MarketplaceProps> = ({ user }) => {
+const Marketplace: React.FC<MarketplaceProps> = ({ user: _user }) => {
   const [items, setItems] = useState<MarketItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'ALL' | 'FOOD' | 'GROCERY' | 'FURNITURE'>('ALL');
@@ -17,7 +17,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user }) => {
       try {
         const itemsRef = collection(db, 'market_items');
         let q = query(
-          itemsRef, 
+          itemsRef,
           where('status', '==', MarketItemStatus.AVAILABLE)
         );
 
@@ -34,7 +34,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user }) => {
           id: doc.id,
           ...doc.data()
         })) as MarketItem[];
-        
+
         // Sort client-side to avoid index requirement
         const sortedItems = fetchedItems.sort((a, b) => b.createdAt - a.createdAt);
         setItems(sortedItems);
@@ -47,7 +47,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user }) => {
 
     fetchItems();
   }, [filter]);
-  const filteredItems = items.filter(item => 
+  const filteredItems = items.filter(item =>
     item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -62,16 +62,16 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user }) => {
           <div className="flex items-center gap-3">
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder="Search items..."
                 className="pl-11 pr-4 py-3 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 focus:ring-2 focus:ring-emerald-500 outline-none transition dark:text-white shadow-sm w-full md:w-64"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Link 
-              to="/market/create" 
+            <Link
+              to="/market/create"
               className="bg-emerald-600 text-white px-6 py-3 rounded-2xl font-bold hover:bg-emerald-700 transition shadow-lg shadow-emerald-200 dark:shadow-none whitespace-nowrap"
             >
               Sell Item
@@ -83,11 +83,10 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user }) => {
             <button
               key={cat}
               onClick={() => setFilter(cat as any)}
-              className={`px-6 py-2 rounded-xl font-medium transition-all whitespace-nowrap ${
-                filter === cat 
-                  ? 'bg-emerald-600 text-white shadow-md' 
+              className={`px-6 py-2 rounded-xl font-medium transition-all whitespace-nowrap ${filter === cat
+                  ? 'bg-emerald-600 text-white shadow-md'
                   : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
+                }`}
             >
               {cat.charAt(0) + cat.slice(1).toLowerCase()}
             </button>
@@ -95,25 +94,25 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user }) => {
         </div>
 
         {loading ? (
-  <div className="flex justify-center py-20">
-    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-600"></div>
-  </div>
-) : filteredItems.length > 0 ? (
+          <div className="flex justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-600"></div>
+          </div>
+        ) : filteredItems.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {filteredItems.map((item) => {
-              const discount = item.originalPrice && item.originalPrice > item.price 
+              const discount = item.originalPrice && item.originalPrice > item.price
                 ? Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)
                 : 0;
 
               return (
-                <Link 
-                  key={item.id} 
+                <Link
+                  key={item.id}
                   to={`/market/item/${item.id}`}
                   className="group bg-white dark:bg-gray-900 rounded-3xl overflow-hidden border border-gray-100 dark:border-gray-800 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
                 >
                   <div className="relative h-56 overflow-hidden">
-                    <img 
-                      src={item.imageUrl || `https://picsum.photos/seed/${item.category.toLowerCase()}/400/300`} 
+                    <img
+                      src={item.imageUrl || `https://picsum.photos/seed/${item.category.toLowerCase()}/400/300`}
                       alt={item.title}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       referrerPolicy="no-referrer"
@@ -180,4 +179,3 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user }) => {
 
 export default Marketplace;
 
-          

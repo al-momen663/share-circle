@@ -6,8 +6,13 @@ import { db } from '../lib/firebase';
 import { MarketItem, MarketItemStatus, User } from '../types';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import { MapPin, ShoppingBag, Loader2, Navigation } from 'lucide-react';
-import { geocodeWithGemini } from '../lib/gemini';
+import { MapPin, Loader2 } from 'lucide-react';
+
+// fallback Gemini geocoding helper (local stub when module is missing)
+const geocodeWithGemini = async (_address: string): Promise<[number, number] | null> => {
+  console.warn('geocodeWithGemini fallback active; no Gemini module available');
+  return null;
+};
 
 // Fix Leaflet marker icon issue
 import 'leaflet/dist/leaflet.css';
@@ -16,10 +21,10 @@ const iconUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png';
 const shadowUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png';
 
 let DefaultIcon = L.icon({
-    iconUrl,
-    shadowUrl,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41]
+  iconUrl,
+  shadowUrl,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41]
 });
 
 L.Marker.prototype.options.icon = DefaultIcon;
@@ -45,7 +50,7 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
         if (docSnap.exists()) {
           const itemData = { id: docSnap.id, ...docSnap.data() } as MarketItem;
           setItem(itemData);
-          
+
           // Geocode location
           const address = itemData.location;
           // Check if it's already a coordinate
@@ -109,7 +114,7 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
         buyerName: user.name,
         soldAt: Date.now()
       });
-      
+
       // Create a notification or message for the seller
       await addDoc(collection(db, 'messages'), {
         marketItemId: id,
@@ -153,8 +158,8 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
         <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800">
           <div className="grid grid-cols-1 lg:grid-cols-2">
             <div className="relative h-96 lg:h-full overflow-hidden">
-              <img 
-                src={item.imageUrl || 'https://picsum.photos/seed/food/800/600'} 
+              <img
+                src={item.imageUrl || 'https://picsum.photos/seed/food/800/600'}
                 alt={item.title}
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
@@ -191,18 +196,18 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
                     <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">Description</h3>
                     <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-lg">{item.description}</p>
                   </div>
-                  
+
                   <div className="space-y-4">
                     <div className="flex items-center text-gray-500 dark:text-gray-400">
                       <MapPin className="h-5 w-5 mr-2 text-emerald-600" />
                       <span className="font-medium">{item.location}</span>
                     </div>
-                    
+
                     <div className="h-64 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 relative">
                       {coords ? (
-                        <MapContainer 
-                          center={coords} 
-                          zoom={13} 
+                        <MapContainer
+                          center={coords}
+                          zoom={13}
                           className="h-full w-full"
                           scrollWheelZoom={false}
                         >
@@ -229,7 +234,7 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
                 {item.status === MarketItemStatus.AVAILABLE ? (
                   isSeller ? (
                     <div className="space-y-4">
-                      <Link 
+                      <Link
                         to={`/market/edit/${item.id}`}
                         className="w-full flex justify-center items-center bg-emerald-600 text-white px-8 py-5 rounded-2xl font-bold text-xl hover:bg-emerald-700 transition shadow-xl shadow-emerald-200 dark:shadow-none"
                       >

@@ -4,8 +4,7 @@ import { collection, addDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
 import { MarketCategory, MarketItemStatus, User } from '../types';
-import LocationSearch from '../components/LocationSearch';
-import { Camera, ShoppingBag, X } from 'lucide-react';
+import { Camera, ShoppingBag } from 'lucide-react';
 interface CreateMarketItemProps {
   user: User;
 }
@@ -34,60 +33,60 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
     }
   };
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
+    e.preventDefault();
+    setLoading(true);
 
-  try {
-    let finalImageUrl = formData.imageUrl;
+    try {
+      let finalImageUrl = formData.imageUrl;
 
-    if (imageFile) {
-      const storageRef = ref(storage, `market_items/${Date.now()}_${imageFile.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, imageFile);
+      if (imageFile) {
+        const storageRef = ref(storage, `market_items/${Date.now()}_${imageFile.name}`);
+        const uploadTask = uploadBytesResumable(storageRef, imageFile);
 
-      finalImageUrl = await new Promise((resolve, reject) => {
-        uploadTask.on(
-          'state_changed',
-          (snapshot) => {
-            const progress =
-              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            setUploadProgress(progress);
-          },
-          (error) => reject(error),
-          () => {
-            getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-              resolve(downloadURL);
-            });
-          }
-        );
-      });
+        finalImageUrl = await new Promise((resolve, reject) => {
+          uploadTask.on(
+            'state_changed',
+            (snapshot) => {
+              const progress =
+                (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              setUploadProgress(progress);
+            },
+            (error) => reject(error),
+            () => {
+              getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                resolve(downloadURL);
+              });
+            }
+          );
+        });
+      }
+      const itemData = {
+        sellerId: user.id,
+        sellerName: user.name,
+        title: formData.title,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        originalPrice: formData.originalPrice
+          ? parseFloat(formData.originalPrice)
+          : null,
+        category: formData.category,
+        status: MarketItemStatus.AVAILABLE,
+        location: formData.location,
+        imageUrl:
+          finalImageUrl ||
+          `https://picsum.photos/seed/${formData.title}/800/600`,
+        createdAt: Date.now(),
+      };
+      await addDoc(collection(db, 'market_items'), itemData);
+      navigate('/marketplace');
+    } catch (error) {
+      console.error("Error creating market item:", error);
+      alert("Failed to create item. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    const itemData = {
-      sellerId: user.id,
-      sellerName: user.name,
-      title: formData.title,
-      description: formData.description,
-      price: parseFloat(formData.price),
-      originalPrice: formData.originalPrice
-        ? parseFloat(formData.originalPrice)
-        : null,
-      category: formData.category,
-      status: MarketItemStatus.AVAILABLE,
-      location: formData.location,
-      imageUrl:
-        finalImageUrl ||
-        `https://picsum.photos/seed/${formData.title}/800/600`,
-      createdAt: Date.now(),
-    };
-    await addDoc(collection(db, 'market_items'), itemData);
-    navigate('/marketplace');
-  } catch (error) {
-    console.error("Error creating market item:", error);
-    alert("Failed to create item. Please try again.");
-  } finally {
-    setLoading(false);
-  }
-};
-return (
+  };
+  return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
         <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800">
@@ -98,7 +97,7 @@ return (
             </div>
             <ShoppingBag className="w-12 h-12 opacity-20" />
           </div>
-          
+
           <form onSubmit={handleSubmit} className="p-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -164,17 +163,21 @@ return (
                   <option value={MarketCategory.FURNITURE}>Furniture</option>
                 </select>
               </div>
-              <LocationSearch 
-                label="Location"
-                value={formData.location}
-                onChange={(val) => setFormData({ ...formData, location: val })}
-                placeholder="Search for location..."
-              />
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Location</label>
+                <input
+                  required
+                  type="text"
+                  placeholder="Enter location..."
+                  className="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-gray-700 focus:ring-0 transition-all text-gray-900 dark:text-white"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                />
+              </div>
             </div>
-
             <div className="space-y-4">
               <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider block">Item Photo</label>
-              <div 
+              <div
                 onClick={() => fileInputRef.current?.click()}
                 className="w-full h-48 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 transition-colors bg-gray-50 dark:bg-gray-800 overflow-hidden relative"
               >
@@ -194,11 +197,11 @@ return (
                   </div>
                 )}
               </div>
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleFileChange} 
-                className="hidden" 
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
                 accept="image/*"
               />
               <div className="text-center">

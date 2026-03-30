@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { User, UserRole } from '../types';
+import { User } from '../types';
 
 interface LandingPageProps {
   user: User | null;
@@ -36,9 +36,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ user }) => {
             <div className="mt-16 lg:mt-0 relative">
               <div className="absolute -top-10 -left-10 w-72 h-72 bg-emerald-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
               <div className="absolute -bottom-10 -right-10 w-72 h-72 bg-teal-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
-              <img 
-                src="https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&q=80&w=800" 
-                alt="Donation box" 
+              <img
+                src="https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&q=80&w=800"
+                alt="Donation box"
                 className="relative rounded-3xl shadow-2xl w-full h-[500px] object-cover"
               />
             </div>
@@ -50,7 +50,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">How Share Circle Works</h2>
           <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-16">Simple steps to make the world a better place.</p>
-          
+
           <div className="grid md:grid-cols-3 gap-12">
             {[
               {

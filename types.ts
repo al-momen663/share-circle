@@ -38,6 +38,7 @@ export interface User {
 }
 
 export interface Donation {
+  location: any;
   id: string;
   donorId: string;
   donorName: string;
