@@ -7,6 +7,7 @@ import { User, UserRole, Donation, DonationStatus } from '../types';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { MapPin, Navigation, Loader2, Info } from 'lucide-react';
+import { geocodeWithGemini } from '../lib/gemini';
 
 // Fix Leaflet marker icon issue
 import 'leaflet/dist/leaflet.css';
@@ -85,8 +86,13 @@ const DonationDetails: React.FC<DonationDetailsProps> = ({ user }) => {
             return [parseFloat(data[0].lat), parseFloat(data[0].lon)] as [number, number];
           }
         }
+
+        // Final fallback: Gemini AI
+        console.log("Traditional geocoding failed, trying Gemini AI...");
+        return await geocodeWithGemini(address);
       } catch (error) {
-        console.error("Geocoding error:", error);
+        console.error("Geocoding error, trying Gemini AI fallback:", error);
+        return await geocodeWithGemini(address);
       }
       return null;
     };
