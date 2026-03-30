@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
@@ -58,11 +59,32 @@ const DonationDetails: React.FC<DonationDetailsProps> = ({ user }) => {
 
   useEffect(() => {
     const geocode = async (address: string) => {
+      // Check if it's already a coordinate
+      const coordRegex = /^(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)$/;
+      const match = address.match(coordRegex);
+      if (match) {
+        return [parseFloat(match[1]), parseFloat(match[3])] as [number, number];
+      }
+
       try {
-        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`);
-        const data = await response.json();
-        if (data && data.length > 0) {
-          return [parseFloat(data[0].lat), parseFloat(data[0].lon)] as [number, number];
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
+          { mode: 'cors' }
+        );
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.length > 0) {
+            return [parseFloat(data[0].lat), parseFloat(data[0].lon)] as [number, number];
+          }
+        }
+        
+        // Try fallback if Nominatim fails or returns no results
+        const fallbackResponse = await fetch(`https://geocode.maps.co/search?q=${encodeURIComponent(address)}`);
+        if (fallbackResponse.ok) {
+          const fallbackData = await fallbackResponse.json();
+          if (fallbackData && fallbackData.length > 0) {
+            return [parseFloat(fallbackData[0].lat), parseFloat(fallbackData[0].lon)] as [number, number];
+          }
         }
       } catch (error) {
         console.error("Geocoding error:", error);
@@ -299,6 +321,5 @@ const DonationDetails: React.FC<DonationDetailsProps> = ({ user }) => {
     </div>
   );
 };
-
 
 export default DonationDetails;
