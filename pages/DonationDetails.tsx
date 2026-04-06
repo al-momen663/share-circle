@@ -111,6 +111,10 @@ const DonationDetails: React.FC<DonationDetailsProps> = ({ user }) => {
     const processLocations = async () => {
       if (!donation) return;
       
+      // Only geocode if we don't have coords yet or if locations changed
+      // Using a ref or just checking current state is tricky with async, 
+      // so we'll just check if the location strings match what we last processed.
+      
       const pCoords = await geocode(donation.pickupLocation);
       setPickupCoords(pCoords);
 
@@ -126,7 +130,7 @@ const DonationDetails: React.FC<DonationDetailsProps> = ({ user }) => {
     };
 
     processLocations();
-  }, [donation]);
+  }, [donation?.pickupLocation, donation?.dropoffLocation]); // Only run when locations change
 
   const updateStatus = async (newStatus: DonationStatus, volunteerId?: string) => {
     if (!donation || !id) return;
