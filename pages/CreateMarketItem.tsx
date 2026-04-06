@@ -88,13 +88,17 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
         const storageRef = ref(storage, `market_items/${Date.now()}_${imageFile.name}`);
         const uploadTask = uploadBytesResumable(storageRef, imageFile);
 
-        finalImageUrl = await new Promise((resolve, reject) => {
+        finalImageUrl = await new Promise<string>((resolve) => {
           uploadTask.on('state_changed',
             (snapshot) => {
               const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
               setUploadProgress(progress);
             },
-            (error) => reject(error),
+            (error) => {
+              console.error("Storage upload error:", error);
+              alert("Image upload failed (CORS issue). You can continue without an image or try a different network.");
+              resolve(""); // Allow submission without image
+            },
             () => {
               getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
                 resolve(downloadURL);
