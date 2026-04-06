@@ -6,8 +6,8 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
 import { MarketCategory, MarketItemStatus, User } from '../types';
 import LocationSearch from '../components/LocationSearch';
-import { Camera, ShoppingBag, Sparkles, Loader2 } from 'lucide-react';
-import { getGeminiClient, isGeminiConfigured } from '../lib/gemini';
+import { Camera, ShoppingBag, X } from 'lucide-react';
+import { compressImage } from '../lib/imageUtils';
 
 interface CreateMarketItemProps {
   user: User;
@@ -17,10 +17,7 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -31,49 +28,17 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
     imageUrl: ''
   });
 
-  const generateAiDescription = async () => {
-    if (!formData.title) {
-      alert("Please enter a title first.");
-      return;
-    }
-
-    setAiLoading(true);
-    try {
-      if (!isGeminiConfigured) {
-        alert("Invalid Gemini API key. Ensure you're using a Google Generative Language API key (not sk- key).");
-        setAiLoading(false);
-        return;
-      }
-      const ai = getGeminiClient();
-      if (!ai) {
-        setAiLoading(false);
-        return;
-      }
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `Write a warm, concise, and helpful description for a marketplace item.
-          Title: ${formData.title}
-          Category: ${formData.category}
-          Price: $${formData.price}
-          Make it sound appealing to potential buyers.`,
-      });
-
-      if (response.text) {
-        setFormData(prev => ({ ...prev, description: response.text ?? '' }));
-      }
-    } catch (error) {
-      console.error("AI Generation Error:", error);
-      alert("Failed to generate description. Please try again.");
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+      try {
+        const compressed = await compressImage(file);
+        setImagePreview(compressed);
+        setFormData(prev => ({ ...prev, imageUrl: compressed }));
+      } catch (err) {
+        console.error("Error compressing image", err);
+        alert("Failed to process image.");
+      }
     }
   };
 
@@ -82,32 +47,6 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
     setLoading(true);
 
     try {
-      let finalImageUrl = formData.imageUrl;
-
-      if (imageFile) {
-        const storageRef = ref(storage, `market_items/${Date.now()}_${imageFile.name}`);
-        const uploadTask = uploadBytesResumable(storageRef, imageFile);
-
-        finalImageUrl = await new Promise<string>((resolve) => {
-          uploadTask.on('state_changed',
-            (snapshot) => {
-              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-              setUploadProgress(progress);
-            },
-            (error) => {
-              console.error("Storage upload error:", error);
-              alert("Image upload failed (CORS issue). You can continue without an image or try a different network.");
-              resolve(""); // Allow submission without image
-            },
-            () => {
-              getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                resolve(downloadURL);
-              });
-            }
-          );
-        });
-      }
-
       const itemData = {
         sellerId: user.id,
         sellerName: user.name,
@@ -118,7 +57,7 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
         category: formData.category,
         status: MarketItemStatus.AVAILABLE,
         location: formData.location,
-        imageUrl: finalImageUrl || `https://picsum.photos/seed/${formData.title}/800/600`,
+        imageUrl: formData.imageUrl || `https://picsum.photos/seed/${formData.title}/800/600`,
         createdAt: Date.now()
       };
 
@@ -143,7 +82,7 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
             </div>
             <ShoppingBag className="w-12 h-12 opacity-20" />
           </div>
-
+          
           <form onSubmit={handleSubmit} className="p-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -185,22 +124,7 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
             </div>
 
             <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Description</label>
-                <button
-                  type="button"
-                  onClick={generateAiDescription}
-                  disabled={aiLoading || !formData.title}
-                  className="flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 disabled:opacity-50 transition-colors"
-                >
-                  {aiLoading ? (
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-3 h-3" />
-                  )}
-                  AI Assist
-                </button>
-              </div>
+              <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Description</label>
               <textarea
                 required
                 rows={4}
@@ -224,7 +148,7 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
                   <option value={MarketCategory.FURNITURE}>Furniture</option>
                 </select>
               </div>
-              <LocationSearch
+              <LocationSearch 
                 label="Location"
                 value={formData.location}
                 onSelect={(val) => setFormData({ ...formData, location: val })}
@@ -235,7 +159,7 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
 
             <div className="space-y-4">
               <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider block">Item Photo</label>
-              <div
+              <div 
                 onClick={() => fileInputRef.current?.click()}
                 className="w-full h-48 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 transition-colors bg-gray-50 dark:bg-gray-800 overflow-hidden relative"
               >
@@ -247,19 +171,12 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
                     <span className="text-sm text-gray-500">Click to upload photo</span>
                   </>
                 )}
-                {loading && uploadProgress > 0 && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                    <div className="w-3/4 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-emerald-500 transition-all" style={{ width: `${uploadProgress}%` }}></div>
-                    </div>
-                  </div>
-                )}
               </div>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                className="hidden"
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                className="hidden" 
                 accept="image/*"
               />
               <div className="text-center">
@@ -287,7 +204,7 @@ const CreateMarketItem: React.FC<CreateMarketItemProps> = ({ user }) => {
                 disabled={loading}
                 className="flex-[2] bg-emerald-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-emerald-700 transition shadow-lg shadow-emerald-200 dark:shadow-none disabled:opacity-50"
               >
-                {loading ? `Listing... ${Math.round(uploadProgress)}%` : 'List Item for Sale'}
+                {loading ? 'Listing...' : 'List Item for Sale'}
               </button>
             </div>
           </form>
