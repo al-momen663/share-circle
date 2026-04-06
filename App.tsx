@@ -10,13 +10,14 @@ import AuthPage from './pages/AuthPage';
 import Dashboard from './pages/Dashboard';
 import CreateDonation from './pages/CreateDonation';
 import DonationDetails from './pages/DonationDetails';
-import EditDonation from './pages/EditDonation';
+import EditDonation from './pages/EditDonation';  
 import ChatRoom from './pages/ChatRoom';
 import Marketplace from './pages/Marketplace';
 import CreateMarketItem from './pages/CreateMarketItem';
 import MarketItemDetails from './pages/MarketItemDetails';
 import EditMarketItem from './pages/EditMarketItem';
 import { User } from './types';
+import './lib/leaflet-setup';
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
