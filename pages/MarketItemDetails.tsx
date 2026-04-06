@@ -4,25 +4,40 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { doc, getDoc, updateDoc, collection, addDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { MarketItem, MarketItemStatus, User } from '../types';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { MapPin, ShoppingBag, Loader2, Navigation } from 'lucide-react';
 import { formatLocation } from '../lib/utils';
 
-// Fix Leaflet marker icon issue
-import 'leaflet/dist/leaflet.css';
+// Component to handle map re-centering and fixing gray tiles
+const MapController = ({ center }: { center: [number, number] }) => {
+  const map = useMap();
+  
+  useEffect(() => {
+    map.setView(center);
+  }, [center, map]);
 
-const iconUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png';
-const shadowUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png';
+  useEffect(() => {
+    // Fix gray tiles by forcing Leaflet to recalculate container size
+    const resizeObserver = new ResizeObserver(() => {
+      map.invalidateSize();
+    });
+    
+    const container = map.getContainer();
+    resizeObserver.observe(container);
 
-let DefaultIcon = L.icon({
-    iconUrl,
-    shadowUrl,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41]
-});
+    const timeout = setTimeout(() => {
+      map.invalidateSize();
+    }, 250);
 
-L.Marker.prototype.options.icon = DefaultIcon;
+    return () => {
+      resizeObserver.disconnect();
+      clearTimeout(timeout);
+    };
+  }, [map]);
+  
+  return null;
+};
 
 interface MarketItemDetailsProps {
   user: User;
@@ -211,6 +226,7 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
                           <Marker position={coords}>
                             <Popup>{item.location}</Popup>
                           </Marker>
+                          <MapController center={coords} />
                         </MapContainer>
                       ) : (
                         <div className="h-full flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800 text-gray-400">
