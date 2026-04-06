@@ -9,24 +9,39 @@ import L from 'leaflet';
 import { MapPin, Navigation, Loader2, Info } from 'lucide-react';
 import { formatLocation } from '../lib/utils';
 
-// Fix Leaflet marker icon issue
-import 'leaflet/dist/leaflet.css';
-
-const iconUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png';
-const shadowUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png';
-
-let DefaultIcon = L.icon({
-    iconUrl,
-    shadowUrl,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41]
-});
-
-L.Marker.prototype.options.icon = DefaultIcon;
-
 interface DonationDetailsProps {
   user: User;
 }
+
+// Component to handle map re-centering and fixing gray tiles
+const MapController = ({ center }: { center: [number, number] }) => {
+  const map = useMap();
+  
+  useEffect(() => {
+    map.setView(center);
+  }, [center, map]);
+
+  useEffect(() => {
+    // Fix gray tiles by forcing Leaflet to recalculate container size
+    const resizeObserver = new ResizeObserver(() => {
+      map.invalidateSize();
+    });
+    
+    const container = map.getContainer();
+    resizeObserver.observe(container);
+
+    const timeout = setTimeout(() => {
+      map.invalidateSize();
+    }, 250);
+
+    return () => {
+      resizeObserver.disconnect();
+      clearTimeout(timeout);
+    };
+  }, [map]);
+  
+  return null;
+};
 
 // Component to auto-fit map to markers
 const MapBounds = ({ points }: { points: [number, number][] }) => {
@@ -239,6 +254,7 @@ const DonationDetails: React.FC<DonationDetailsProps> = ({ user }) => {
                   {route.length > 0 && (
                     <Polyline positions={route} color="#10b981" weight={5} opacity={0.7} />
                   )}
+                  <MapController center={pickupCoords} />
                   <MapBounds points={mapPoints} />
                 </MapContainer>
               ) : (
