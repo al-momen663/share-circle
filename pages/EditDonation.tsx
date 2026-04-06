@@ -4,9 +4,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { User, DonationType, DonationStatus, Donation } from '../types';
-import { getGeminiClient, isGeminiConfigured } from '../lib/gemini';
 import LocationSearch from '../components/LocationSearch';
-import { Camera, Sparkles, Loader2 } from 'lucide-react';
+import { Camera, MapPin } from 'lucide-react';
+import { compressImage } from '../lib/imageUtils';
 
 interface EditDonationProps {
   user: User;
@@ -24,7 +24,6 @@ const EditDonation: React.FC<EditDonationProps> = ({ user }) => {
   const [status, setStatus] = useState<DonationStatus>(DonationStatus.AVAILABLE);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
-  const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(() => {
     const fetchDonation = async () => {
@@ -59,50 +58,16 @@ const EditDonation: React.FC<EditDonationProps> = ({ user }) => {
     fetchDonation();
   }, [id, user.id, navigate]);
 
-  const handleAiAssist = async () => {
-    if (!title) {
-      alert("Please enter a title first!");
-      return;
-    }
-
-    setAiLoading(true);
-    try {
-      if (!isGeminiConfigured) {
-        alert("Invalid Gemini API key. Ensure you're using a Google Generative Language API key (not sk- key). ");
-        setAiLoading(false);
-        return;
-      }
-      const ai = getGeminiClient();
-      if (!ai) {
-        setAiLoading(false);
-        return;
-      }
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `Write a warm, concise, and helpful description for a donation item.
-          Title: ${title}
-          Type: ${type}
-          Keep it under 60 words and emphasize the positive impact.`,
-      });
-
-      const aiText = response.text;
-      if (aiText) {
-        setDescription(aiText.trim());
-      }
-    } catch (error: any) {
-      console.error("Gemini AI Assist error", error);
-      alert("AI Assistant is currently unavailable.");
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setImage(reader.result as string);
-      reader.readAsDataURL(file);
+      try {
+        const compressed = await compressImage(file);
+        setImage(compressed);
+      } catch (err) {
+        console.error("Error compressing image", err);
+        alert("Failed to process image. Please try another one.");
+      }
     }
   };
 
@@ -159,17 +124,17 @@ const EditDonation: React.FC<EditDonationProps> = ({ user }) => {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="bg-white dark:bg-gray-800 rounded-[3rem] shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-700 flex flex-col md:flex-row">
         <div className="md:w-1/3 bg-emerald-600 p-12 text-white flex flex-col justify-between">
-          <div>
-            <h1 className="text-4xl font-black mb-6 leading-tight">Edit Your <br /> Donation</h1>
-            <p className="opacity-90 text-emerald-50 leading-relaxed mb-10">Update the details of your contribution to keep the community informed.</p>
-          </div>
-          <div className="mt-12 opacity-50 text-xs font-bold uppercase tracking-widest text-center">Share Circle</div>
+            <div>
+                <h1 className="text-4xl font-black mb-6 leading-tight">Edit Your <br/> Donation</h1>
+                <p className="opacity-90 text-emerald-50 leading-relaxed mb-10">Update the details of your contribution to keep the community informed.</p>
+            </div>
+            <div className="mt-12 opacity-50 text-xs font-bold uppercase tracking-widest text-center">Share Circle</div>
         </div>
 
         <form onSubmit={handleSubmit} className="flex-grow p-12 space-y-6 overflow-y-auto max-h-[80vh]">
           <div>
             <label className="block text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Donation Title</label>
-            <input
+            <input 
               type="text" required value={title} onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g., Fresh Organic Apples"
               className="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border-none focus:ring-2 focus:ring-emerald-500 outline-none transition dark:text-white"
@@ -183,8 +148,8 @@ const EditDonation: React.FC<EditDonationProps> = ({ user }) => {
 
           <div>
             <label className="block text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Status</label>
-            <select
-              value={status}
+            <select 
+              value={status} 
               onChange={(e) => setStatus(e.target.value as DonationStatus)}
               className="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border-none focus:ring-2 focus:ring-emerald-500 outline-none transition dark:text-white"
             >
@@ -197,14 +162,14 @@ const EditDonation: React.FC<EditDonationProps> = ({ user }) => {
 
           <div className="space-y-6">
             <div className="relative">
-              <LocationSearch
+              <LocationSearch 
                 label="Pickup Location / Address"
                 value={pickupLocation}
                 onChange={setPickupLocation}
                 placeholder="Search for pickup address..."
               />
-              <button
-                type="button"
+              <button 
+                type="button" 
                 onClick={handleGetLocation}
                 className="absolute right-2 top-11 px-4 py-2 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-200 transition"
               >
@@ -212,7 +177,7 @@ const EditDonation: React.FC<EditDonationProps> = ({ user }) => {
               </button>
             </div>
 
-            <LocationSearch
+            <LocationSearch 
               label="Drop-off Location (Optional)"
               value={dropoffLocation}
               onChange={setDropoffLocation}
@@ -229,13 +194,7 @@ const EditDonation: React.FC<EditDonationProps> = ({ user }) => {
           </div>
 
           <div>
-            <div className="flex justify-between items-center mb-3">
-              <label className="block text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Description</label>
-              <button type="button" onClick={handleAiAssist} disabled={aiLoading} className="text-[10px] font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-full hover:bg-emerald-200 transition flex items-center space-x-1">
-                {aiLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                <span>{aiLoading ? 'Generating...' : 'AI Assist'}</span>
-              </button>
-            </div>
+            <label className="block text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">Description</label>
             <textarea rows={3} required value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Tell us more about the donation..." className="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border-none focus:ring-2 focus:ring-emerald-500 outline-none transition dark:text-white resize-none" />
           </div>
 
