@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { User, UserRole, Donation, DonationStatus, DonationType, MarketItem, MarketItemStatus } from '../types';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
+import { formatLocation } from '../lib/utils';
 
 import LocationSearch from '../components/LocationSearch';
 
@@ -69,10 +70,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [donations, setDonations] = useState<Donation[]>([]);
   const [marketItems, setMarketItems] = useState<MarketItem[]>([]);
   const [activeTab, setActiveTab] = useState<'donations' | 'market'>('donations');
-  const [filter, setFilter] = useState<DonationStatus | MarketItemStatus | 'ALL'>('ALL');
+  const [filter, setFilter] = useState<DonationStatus | 'ALL'>('ALL');
   const [search, setSearch] = useState('');
-  const [mapSearch, setMapSearch] = useState('');
-  const [mapCustomCenter, setMapCustomCenter] = useState<[number, number] | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'map'>(() => {
     return (localStorage.getItem('share_circle_initial_view') as 'grid' | 'map') || 'grid';
   });
@@ -91,10 +90,14 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     }
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const docs = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Donation[];
+      const docs = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          location: data.pickupLocation || data.location || ''
+        };
+      }) as Donation[];
       
       // Sort client-side
       const sortedDocs = docs.sort((a, b) => b.createdAt - a.createdAt);
@@ -144,10 +147,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   });
 
   const filteredMarketItems = marketItems.filter(i => {
-    const statusMatch =
-      filter === 'ALL' ||
-      (filter === MarketItemStatus.AVAILABLE && i.status === MarketItemStatus.AVAILABLE) ||
-      (filter === MarketItemStatus.SOLD && i.status === MarketItemStatus.SOLD);
+    const statusMatch = filter === 'ALL' || i.status === filter;
     const searchMatch = i.title.toLowerCase().includes(search.toLowerCase()) || 
                        i.location.toLowerCase().includes(search.toLowerCase());
     return statusMatch && searchMatch;
@@ -155,12 +155,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
 
   const parseLatLng = (loc: string): [number, number] => {
     if (!loc) return [51.505, -0.09];
-    
-    // Try to find coordinates in parentheses or just as a string
-    // This regex looks for two numbers separated by a comma or space, possibly inside parentheses
-    const regex = /(-?\d+(?:\.\d+)?)\s*[,\s]\s*(-?\d+(?:\.\d+)?)/;
+    const regex = /\(([^,]+),\s*([^)]+)\)/;
     const match = loc.match(regex);
-    
     if (match) {
       const lat = parseFloat(match[1]);
       const lng = parseFloat(match[2]);
@@ -171,22 +167,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
 
   // Determine map center based on filtered items or default
   const getMapCenter = (): [number, number] => {
-    if (mapCustomCenter) return mapCustomCenter;
     const currentList = activeTab === 'donations' ? filteredDonations : filteredMarketItems;
     if (currentList.length > 0) {
       return parseLatLng(currentList[0].location);
     }
     return [51.505, -0.09];
-  };
-
-  const handleMapSearch = (val: string) => {
-    setMapSearch(val);
-    const coords = parseLatLng(val);
-    // Only update center if we found valid coordinates (not default)
-    // or if the string explicitly contains coordinates
-    if (val.includes('(') && val.includes(')')) {
-      setMapCustomCenter(coords);
-    }
   };
 
   const mapCenter = getMapCenter();
@@ -339,7 +324,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                       <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2 leading-tight truncate">{donation.title}</h3>
                       <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-6">
                         <span className="mr-2 opacity-70">📍</span>
-                        <span className="truncate">{donation.location}</span>
+                        <span className="truncate">{formatLocation(donation.location)}</span>
                       </div>
                       <div className="pt-6 border-t border-gray-50 dark:border-gray-700 flex justify-between items-center">
                         <div className="flex items-center space-x-3">
@@ -389,9 +374,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                     </div>
                     <div className="p-7 flex-grow">
                       <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2 leading-tight truncate">{item.title}</h3>
-                      <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-6">
+                      <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-2">
                         <span className="mr-2 opacity-70">🏷️</span>
                         <span className="truncate">{item.category}</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-6">
+                        <span className="mr-2 opacity-70">📍</span>
+                        <span className="truncate">{formatLocation(item.location)}</span>
                       </div>
                       <div className="pt-6 border-t border-gray-50 dark:border-gray-700 flex justify-between items-center">
                         <div className="flex items-center space-x-3">
@@ -414,14 +403,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
           )
         ) : (
           <div className="h-[600px] w-full rounded-[2.5rem] overflow-hidden shadow-xl border-4 border-white dark:border-gray-800 bg-gray-200 dark:bg-gray-950 mt-4 relative animate-in fade-in duration-500">
-             <div className="absolute top-4 left-4 z-[1000] w-72 sm:w-96">
-                <LocationSearch 
-                  value={mapSearch}
-                  onSelect={handleMapSearch}
-                  onChange={setMapSearch}
-                  placeholder="Search map location..."
-                />
-             </div>
              <MapContainer 
                 center={mapCenter} 
                 zoom={13} 
@@ -444,7 +425,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                               <div className="p-1 min-w-[200px]">
                                   <img src={d.imageUrl} className="w-full h-24 object-cover rounded-xl mb-3 shadow-sm" alt="Donation" />
                                   <h4 className="font-black text-gray-900 text-lg mb-1 leading-tight">{d.title}</h4>
-                                  <p className="text-xs text-gray-500 mb-3 truncate">📍 {d.location}</p>
+                                  <p className="text-xs text-gray-500 mb-3 truncate">📍 {formatLocation(d.location)}</p>
                                   <div className="flex justify-between items-center mb-3">
                                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${
                                           d.status === DonationStatus.AVAILABLE ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
@@ -476,7 +457,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                               <div className="p-1 min-w-[200px]">
                                   <img src={item.imageUrl} className="w-full h-24 object-cover rounded-xl mb-3 shadow-sm" alt="Market Item" />
                                   <h4 className="font-black text-gray-900 text-lg mb-1 leading-tight">{item.title}</h4>
-                                  <p className="text-xs text-gray-500 mb-1 truncate">📍 {item.location}</p>
+                                  <p className="text-xs text-gray-500 mb-1 truncate">📍 {formatLocation(item.location)}</p>
                                   <p className="text-emerald-600 font-bold mb-3">${item.price.toFixed(2)}</p>
                                   <Link 
                                       to={`/market/item/${item.id}`}
