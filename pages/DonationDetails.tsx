@@ -7,7 +7,7 @@ import { User, UserRole, Donation, DonationStatus } from '../types';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { MapPin, Navigation, Loader2, Info } from 'lucide-react';
-import { geocodeWithGemini } from '../lib/gemini';
+import { formatLocation } from '../lib/utils';
 
 // Fix Leaflet marker icon issue
 import 'leaflet/dist/leaflet.css';
@@ -86,13 +86,8 @@ const DonationDetails: React.FC<DonationDetailsProps> = ({ user }) => {
             return [parseFloat(data[0].lat), parseFloat(data[0].lon)] as [number, number];
           }
         }
-
-        // Final fallback: Gemini AI
-        console.log("Traditional geocoding failed, trying Gemini AI...");
-        return await geocodeWithGemini(address);
       } catch (error) {
-        console.error("Geocoding error, trying Gemini AI fallback:", error);
-        return await geocodeWithGemini(address);
+        console.error("Geocoding error:", error);
       }
       return null;
     };
@@ -206,14 +201,14 @@ const DonationDetails: React.FC<DonationDetailsProps> = ({ user }) => {
                 <h4 className="text-[10px] font-black text-emerald-600 dark:text-emerald-500 uppercase tracking-widest mb-1 flex items-center">
                   <MapPin size={12} className="mr-1" /> Pickup Location
                 </h4>
-                <p className="text-sm font-bold text-gray-900 dark:text-gray-200">{donation.pickupLocation}</p>
+                <p className="text-sm font-bold text-gray-900 dark:text-gray-200">{formatLocation(donation.pickupLocation)}</p>
               </div>
               {donation.dropoffLocation && (
                 <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-2xl border border-blue-100 dark:border-blue-900/50">
                   <h4 className="text-[10px] font-black text-blue-600 dark:text-blue-500 uppercase tracking-widest mb-1 flex items-center">
                     <MapPin size={12} className="mr-1" /> Drop-off Location
                   </h4>
-                  <p className="text-sm font-bold text-gray-900 dark:text-gray-200">{donation.dropoffLocation}</p>
+                  <p className="text-sm font-bold text-gray-900 dark:text-gray-200">{formatLocation(donation.dropoffLocation)}</p>
                 </div>
               )}
             </div>
