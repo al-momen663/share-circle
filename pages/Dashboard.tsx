@@ -42,9 +42,12 @@ const marketIcon = new L.Icon({
 // Helper component to handle map re-centering and fixing gray tiles
 const MapController = ({ center }: { center: [number, number] }) => {
   const map = useMap();
+  
   useEffect(() => {
     map.setView(center);
-    
+  }, [center, map]);
+
+  useEffect(() => {
     // Fix gray tiles by forcing Leaflet to recalculate container size
     const resizeObserver = new ResizeObserver(() => {
       map.invalidateSize();
@@ -53,12 +56,16 @@ const MapController = ({ center }: { center: [number, number] }) => {
     const container = map.getContainer();
     resizeObserver.observe(container);
 
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
       map.invalidateSize();
     }, 250);
 
-    return () => resizeObserver.disconnect();
-  }, [center, map]);
+    return () => {
+      resizeObserver.disconnect();
+      clearTimeout(timeout);
+    };
+  }, [map]);
+  
   return null;
 };
 
@@ -174,7 +181,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     return [51.505, -0.09];
   };
 
-  const mapCenter = getMapCenter();
+  const mapCenter = React.useMemo(() => getMapCenter(), [filteredDonations, filteredMarketItems, activeTab]);
 
   const donationStatusOptions = [
     { label: 'All', value: 'ALL' },
