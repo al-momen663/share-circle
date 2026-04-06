@@ -14,6 +14,7 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { UserRole } from '../types';
 
 const AuthPage: React.FC = () => {
+  console.log("AuthPage mounting...");
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [role, setRole] = useState<UserRole>(UserRole.DONOR);
