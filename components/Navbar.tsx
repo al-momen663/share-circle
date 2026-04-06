@@ -8,9 +8,10 @@ interface NavbarProps {
   onLogout: () => void;
   isDark: boolean;
   onToggleTheme: () => void;
+  loadingProfile?: boolean;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ user, onLogout, isDark, onToggleTheme }) => {
+const Navbar: React.FC<NavbarProps> = ({ user, onLogout, isDark, onToggleTheme, loadingProfile }) => {
   const navigate = useNavigate();
 
   return (
@@ -71,7 +72,12 @@ const Navbar: React.FC<NavbarProps> = ({ user, onLogout, isDark, onToggleTheme }
               {isDark ? '☀️' : '🌙'}
             </button>
 
-            {user ? (
+            {loadingProfile ? (
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-xs text-gray-400 font-medium hidden sm:block">Loading...</span>
+              </div>
+            ) : user ? (
               <div className="flex items-center space-x-3">
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{user.name}</p>

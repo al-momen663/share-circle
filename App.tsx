@@ -22,6 +22,7 @@ import './lib/leaflet-setup';
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingProfile, setLoadingProfile] = useState(false);
   const [isDark, setIsDark] = useState(() => {
     return localStorage.getItem('kindshare_theme') === 'dark';
   });
@@ -30,6 +31,7 @@ const App: React.FC = () => {
     // Fix: Use modular onAuthStateChanged with the auth instance correctly
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
+        setLoadingProfile(true);
         try {
           // Fetch additional user data (role, name) from Firestore
           const userDoc = await getDoc(doc(db, 'users', fbUser.uid));
@@ -58,9 +60,12 @@ const App: React.FC = () => {
             role: UserRole.DONOR,
             avatar: fbUser.photoURL || `https://ui-avatars.com/api/?name=${fbUser.displayName || 'U'}&background=10b981&color=fff&bold=true`
           } as User);
+        } finally {
+          setLoadingProfile(false);
         }
       } else {
         setCurrentUser(null);
+        setLoadingProfile(false);
       }
       setLoading(false);
     });
@@ -101,49 +106,59 @@ const App: React.FC = () => {
   return (
     <Router>
       <div className="flex flex-col min-h-screen transition-colors duration-300">
-        <Navbar user={currentUser} onLogout={handleLogout} isDark={isDark} onToggleTheme={toggleTheme} />
+        <Navbar 
+          user={currentUser} 
+          onLogout={handleLogout} 
+          isDark={isDark} 
+          onToggleTheme={toggleTheme} 
+          loadingProfile={loadingProfile}
+        />
         <main className="flex-grow">
           <Routes>
             <Route path="/" element={<LandingPage user={currentUser} />} />
             <Route 
               path="/auth" 
-              element={!currentUser ? <AuthPage /> : <Navigate to="/dashboard" />} 
+              element={<AuthPage />} 
             />
             <Route 
               path="/dashboard" 
-              element={currentUser ? <Dashboard user={currentUser} /> : <Navigate to="/auth" />} 
+              element={loadingProfile ? (
+                <div className="min-h-screen flex items-center justify-center bg-emerald-50 dark:bg-gray-950">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-600"></div>
+                </div>
+              ) : currentUser ? <Dashboard user={currentUser} /> : <Navigate to="/auth" />} 
             />
             <Route 
               path="/donate" 
-              element={currentUser?.role === 'DONOR' ? <CreateDonation user={currentUser} /> : <Navigate to="/dashboard" />} 
+              element={loadingProfile ? null : currentUser?.role === UserRole.DONOR ? <CreateDonation user={currentUser} /> : <Navigate to="/dashboard" />} 
             />
             <Route 
               path="/donations/:id" 
-              element={currentUser ? <DonationDetails user={currentUser} /> : <Navigate to="/auth" />} 
+              element={loadingProfile ? null : currentUser ? <DonationDetails user={currentUser} /> : <Navigate to="/auth" />} 
             />
             <Route 
               path="/donations/edit/:id" 
-              element={currentUser?.role === 'DONOR' ? <EditDonation user={currentUser} /> : <Navigate to="/dashboard" />} 
+              element={loadingProfile ? null : currentUser?.role === UserRole.DONOR ? <EditDonation user={currentUser} /> : <Navigate to="/dashboard" />} 
             />
             <Route 
               path="/chat/:id" 
-              element={currentUser ? <ChatRoom user={currentUser} /> : <Navigate to="/auth" />} 
+              element={loadingProfile ? null : currentUser ? <ChatRoom user={currentUser} /> : <Navigate to="/auth" />} 
             />
             <Route 
               path="/marketplace" 
-              element={currentUser ? <Marketplace user={currentUser} /> : <Navigate to="/auth" />} 
+              element={loadingProfile ? null : currentUser ? <Marketplace user={currentUser} /> : <Navigate to="/auth" />} 
             />
             <Route 
               path="/market/create" 
-              element={currentUser ? <CreateMarketItem user={currentUser} /> : <Navigate to="/auth" />} 
+              element={loadingProfile ? null : currentUser ? <CreateMarketItem user={currentUser} /> : <Navigate to="/auth" />} 
             />
             <Route 
               path="/market/item/:id" 
-              element={currentUser ? <MarketItemDetails user={currentUser} /> : <Navigate to="/auth" />} 
+              element={loadingProfile ? null : currentUser ? <MarketItemDetails user={currentUser} /> : <Navigate to="/auth" />} 
             />
             <Route 
               path="/market/edit/:id" 
-              element={currentUser ? <EditMarketItem user={currentUser} /> : <Navigate to="/auth" />} 
+              element={loadingProfile ? null : currentUser ? <EditMarketItem user={currentUser} /> : <Navigate to="/auth" />} 
             />
           </Routes>
         </main>
