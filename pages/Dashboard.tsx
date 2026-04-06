@@ -69,11 +69,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const [donations, setDonations] = useState<Donation[]>([]);
   const [marketItems, setMarketItems] = useState<MarketItem[]>([]);
   const [activeTab, setActiveTab] = useState<'donations' | 'market'>('donations');
-  const [filter, setFilter] = useState<DonationStatus | 'ALL'>('ALL');
+  const [filter, setFilter] = useState<DonationStatus | MarketItemStatus | 'ALL'>('ALL');
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'map'>(() => {
     return (localStorage.getItem('share_circle_initial_view') as 'grid' | 'map') || 'grid';
   });
+
+  useEffect(() => {
+    setFilter('ALL');
+  }, [activeTab]);
 
   useEffect(() => {
     let q;
@@ -139,14 +143,14 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   }, [user.id, user.role]);
 
   const filteredDonations = donations.filter(d => {
-    const statusMatch = filter === 'ALL' || d.status === filter;
+    const statusMatch = filter === 'ALL' || (d.status as string) === (filter as string);
     const searchMatch = d.title.toLowerCase().includes(search.toLowerCase()) || 
                        d.location.toLowerCase().includes(search.toLowerCase());
     return statusMatch && searchMatch;
   });
 
   const filteredMarketItems = marketItems.filter(i => {
-    const statusMatch = filter === 'ALL' || i.status === filter;
+    const statusMatch = filter === 'ALL' || (i.status as string) === (filter as string);
     const searchMatch = i.title.toLowerCase().includes(search.toLowerCase()) || 
                        i.location.toLowerCase().includes(search.toLowerCase());
     return statusMatch && searchMatch;
