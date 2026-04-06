@@ -28,8 +28,10 @@ const App: React.FC = () => {
   });
 
   useEffect(() => {
+    console.log("App mounted, initializing auth...");
     // Fix: Use modular onAuthStateChanged with the auth instance correctly
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      console.log("Auth state changed, fbUser:", fbUser?.uid);
       if (fbUser) {
         setLoadingProfile(true);
         try {
@@ -118,7 +120,7 @@ const App: React.FC = () => {
             <Route path="/" element={<LandingPage user={currentUser} />} />
             <Route 
               path="/auth" 
-              element={<AuthPage />} 
+              element={currentUser && !loadingProfile ? <Navigate to="/dashboard" /> : <AuthPage />} 
             />
             <Route 
               path="/dashboard" 
