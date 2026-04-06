@@ -7,7 +7,7 @@ import { MarketItem, MarketItemStatus, User } from '../types';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { MapPin, ShoppingBag, Loader2, Navigation } from 'lucide-react';
-import { formatLocation } from '../lib/utils';
+import { formatLocation, parseLatLng } from '../lib/utils';
 
 // Component to handle map re-centering and fixing gray tiles
 const MapController = ({ center }: { center: [number, number] }) => {
@@ -63,12 +63,11 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
           
           // Geocode location
           const address = itemData.location;
-          // Check if it's already a coordinate
-          const coordRegex = /^(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)$/;
-          const match = address.match(coordRegex);
-          if (match) {
-            setCoords([parseFloat(match[1]), parseFloat(match[3])]);
-          } else {
+          const initialCoords = parseLatLng(address);
+          setCoords(initialCoords);
+          
+          // If we only have default coordinates and it's not a coordinate string, try to geocode the display name
+          if (initialCoords[0] === 51.505 && initialCoords[1] === -0.09 && !address.match(/\(([^,]+),\s*([^)]+)\)/)) {
             try {
               // Try Photon (Komoot) first - faster and more lenient CORS
               const response = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(address)}&limit=1`);
@@ -77,25 +76,10 @@ const MarketItemDetails: React.FC<MarketItemDetailsProps> = ({ user }) => {
                 if (data.features && data.features.length > 0) {
                   const f = data.features[0];
                   setCoords([f.geometry.coordinates[1], f.geometry.coordinates[0]]);
-                } else {
-                  throw new Error('No results from Photon');
                 }
-              } else {
-                throw new Error('Photon error');
               }
             } catch (error) {
-              console.error("Photon geocoding failed, trying Nominatim:", error);
-              try {
-                const nomResponse = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`);
-                if (nomResponse.ok) {
-                  const data = await nomResponse.json();
-                  if (data && data.length > 0) {
-                    setCoords([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
-                  }
-                }
-              } catch (nomError) {
-                console.error("Nominatim geocoding also failed:", nomError);
-              }
+              console.error("Photon geocoding failed:", error);
             }
           }
         } else {
