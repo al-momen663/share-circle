@@ -16,7 +16,7 @@ import Marketplace from './pages/Marketplace';
 import CreateMarketItem from './pages/CreateMarketItem';
 import MarketItemDetails from './pages/MarketItemDetails';
 import EditMarketItem from './pages/EditMarketItem';
-import { User } from './types';
+import { User, UserRole } from './types';
 import './lib/leaflet-setup';
 
 const App: React.FC = () => {
@@ -30,16 +30,34 @@ const App: React.FC = () => {
     // Fix: Use modular onAuthStateChanged with the auth instance correctly
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
-        // Fetch additional user data (role, name) from Firestore
-        const userDoc = await getDoc(doc(db, 'users', fbUser.uid));
-        if (userDoc.exists()) {
+        try {
+          // Fetch additional user data (role, name) from Firestore
+          const userDoc = await getDoc(doc(db, 'users', fbUser.uid));
+          if (userDoc.exists()) {
+            setCurrentUser({
+              id: fbUser.uid,
+              ...userDoc.data()
+            } as User);
+          } else {
+            // Fallback for missing Firestore document
+            setCurrentUser({
+              id: fbUser.uid,
+              name: fbUser.displayName || fbUser.email?.split('@')[0] || 'User',
+              email: fbUser.email || '',
+              role: UserRole.DONOR,
+              avatar: fbUser.photoURL || `https://ui-avatars.com/api/?name=${fbUser.displayName || 'U'}&background=10b981&color=fff&bold=true`
+            } as User);
+          }
+        } catch (error) {
+          console.error("Error fetching user doc:", error);
+          // Still set a minimal user so they aren't stuck
           setCurrentUser({
             id: fbUser.uid,
-            ...userDoc.data()
+            name: fbUser.displayName || fbUser.email?.split('@')[0] || 'User',
+            email: fbUser.email || '',
+            role: UserRole.DONOR,
+            avatar: fbUser.photoURL || `https://ui-avatars.com/api/?name=${fbUser.displayName || 'U'}&background=10b981&color=fff&bold=true`
           } as User);
-        } else {
-          // Handle case where auth exists but doc doesn't
-          setCurrentUser(null);
         }
       } else {
         setCurrentUser(null);

@@ -5,10 +5,12 @@ import { useNavigate } from 'react-router-dom';
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword,
+  signInWithPopup,
   auth,
-  db
+  db,
+  googleProvider
 } from '../lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { UserRole } from '../types';
 
 const AuthPage: React.FC = () => {
@@ -30,26 +32,73 @@ const AuthPage: React.FC = () => {
 
     try {
       if (isLogin) {
-        // Fix: Use modular signInWithEmailAndPassword with auth instance
-        await signInWithEmailAndPassword(auth, email, password);
-        // On successful login, show view options
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const fbUser = userCredential.user;
+        
+        // Check if doc exists, if not create a fallback
+        const userDoc = await getDoc(doc(db, 'users', fbUser.uid));
+        if (!userDoc.exists()) {
+          await setDoc(doc(db, 'users', fbUser.uid), {
+            name: email.split('@')[0],
+            email: email,
+            role: UserRole.DONOR,
+            avatar: `https://ui-avatars.com/api/?name=${email.split('@')[0]}&background=10b981&color=fff&bold=true`,
+            createdAt: new Date().toISOString()
+          });
+        }
         setShowOptions(true);
       } else {
-        // Fix: Use modular createUserWithEmailAndPassword with auth instance
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const fbUser = userCredential.user;
         
-        // Save user details to Firestore
         await setDoc(doc(db, 'users', fbUser.uid), {
           name,
           email,
           role,
-          avatar: `https://ui-avatars.com/api/?name=${name || 'K'}&background=10b981&color=fff&bold=true`
+          avatar: `https://ui-avatars.com/api/?name=${name || 'K'}&background=10b981&color=fff&bold=true`,
+          createdAt: new Date().toISOString()
         });
         
         setShowOptions(true);
       }
     } catch (err: any) {
+      console.error("Auth error:", err);
+      if (err.code === 'auth/user-not-found') {
+        setError('No account found with this email.');
+      } else if (err.code === 'auth/wrong-password') {
+        setError('Incorrect password.');
+      } else if (err.code === 'auth/email-already-in-use') {
+        setError('This email is already registered.');
+      } else {
+        setError(err.message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const fbUser = result.user;
+      
+      // Check if user exists in Firestore
+      const userDoc = await getDoc(doc(db, 'users', fbUser.uid));
+      if (!userDoc.exists()) {
+        // Create basic profile for new Google users
+        await setDoc(doc(db, 'users', fbUser.uid), {
+          name: fbUser.displayName || 'Anonymous User',
+          email: fbUser.email,
+          role: UserRole.VOLUNTEER, // Default role for Google signups
+          avatar: fbUser.photoURL || `https://ui-avatars.com/api/?name=${fbUser.displayName || 'U'}&background=10b981&color=fff&bold=true`,
+          createdAt: new Date().toISOString()
+        });
+      }
+      setShowOptions(true);
+    } catch (err: any) {
+      console.error("Google Auth error:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -161,6 +210,25 @@ const AuthPage: React.FC = () => {
                 className="w-full py-4 bg-emerald-600 text-white rounded-[1.5rem] font-black text-lg hover:bg-emerald-700 transition shadow-xl shadow-emerald-200 dark:shadow-none hover:scale-[1.02] disabled:opacity-50"
               >
                 {loading ? 'Processing...' : (isLogin ? 'Enter App' : 'Create Account')}
+              </button>
+
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white dark:bg-gray-800 px-2 text-gray-400 font-black tracking-widest">Or continue with</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={loading}
+                className="w-full py-3.5 bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-700 text-gray-700 dark:text-gray-200 rounded-xl font-black text-sm flex items-center justify-center space-x-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition disabled:opacity-50"
+              >
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" referrerPolicy="no-referrer" />
+                <span>Google Account</span>
               </button>
 
               <div className="text-center mt-3">

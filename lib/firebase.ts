@@ -1,5 +1,13 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { 
+  getAuth, 
+  onAuthStateChanged, 
+  signOut, 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup
+} from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
@@ -21,11 +29,13 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+export const googleProvider = new GoogleAuthProvider();
 
 // Export modular auth functions to ensure consistent module resolution across the app
 export { 
   onAuthStateChanged, 
   signOut, 
   createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword 
+  signInWithEmailAndPassword,
+  signInWithPopup
 };
